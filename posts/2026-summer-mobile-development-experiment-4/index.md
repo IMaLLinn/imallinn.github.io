@@ -1,18 +1,6 @@
 # 2026夏移动软件开发实验四
 
 
-<div align="center">姓名：李宛霖　　学号：24020007064</div>
-
-| 项目 | 内容 |
-| --- | --- |
-| 课程 | 中国海洋大学《移动软件开发》 |
-| 实验名称 | 实验 4：MEOW PUSH 像素推饭碗小程序 |
-| 项目主题 | MEOW PUSH |
-| 博客地址 | https://7m7666.github.io/ |
-| 代码仓库地址 | https://github.com/7M7666/Mobile-Development2026 |
-
-<!--more-->
-
 ## 1 实验目的
 
 1. 使用微信原生小程序的 WXML、WXSS、JavaScript 和 Canvas 2D 完成一个可玩的格子类小游戏，不使用 npm、游戏引擎或第三方 UI 框架。
@@ -469,6 +457,6 @@ this.playerVisual = interpolatePosition(
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-4/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-4/  
 

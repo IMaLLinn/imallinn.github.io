@@ -500,6 +500,6 @@ unsigned float_i2f(int x) {
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/datalab%E8%AF%A6%E8%A7%A3/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/datalab%E8%AF%A6%E8%A7%A3/  
 

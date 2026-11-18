@@ -1,18 +1,6 @@
 # 2026夏移动软件开发实验三
 
 
-<div align="center">姓名：李宛霖　　学号：24020007064</div>
-
-| 项目 | 内容 |
-| --- | --- |
-| 课程 | 中国海洋大学《移动软件开发》 |
-| 实验名称 | Lab 3 高校新闻网微信小程序 |
-| 项目主题 | 中国海洋大学新闻网 / OUC NEWS |
-| 博客地址 | https://7m7666.github.io/ |
-| 代码仓库地址 | https://github.com/7M7666/Mobile-Development2026 |
-
-<!--more-->
-
 ## 1 实验目的
 
 1. 熟悉原生微信小程序中 `app.json`、页面 JS、WXML 和 WXSS 的分工，能够配置多页面和底部 tabBar。
@@ -638,7 +626,6 @@ my-page
 <p align="center"><img src="image-4.png" width="300" alt="原生分享面板"></p>
 <p align="center">图 5　详情页点击分享后弹出的微信原生分享面板，背景中可见已收藏和分享操作区。</p>
 
-<p align="center"><img src="image-5.png" width="300" alt="已登录的个人中心收藏列表"></p>
 <p align="center">图 6　已登录状态下的个人中心，展示头像昵称和 3 条我的收藏。</p>
 
 <p align="center"><img src="image-6.png" width="300" alt="个人中心最近浏览列表"></p>
@@ -673,6 +660,6 @@ my-page
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-3/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-3/  
 

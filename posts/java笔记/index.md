@@ -270,6 +270,6 @@ public User(String name) {
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/java%E7%AC%94%E8%AE%B0/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/java%E7%AC%94%E8%AE%B0/  
 

@@ -1,18 +1,6 @@
 # 2026夏移动软件开发实验六
 
 
-<div align="center">姓名：李宛霖　　学号：24020007064</div>
-
-| 项目 | 内容 |
-| --- | --- |
-| 课程 | 中国海洋大学《移动软件开发》 |
-| 实验名称 | 实验 6：微信小程序云开发照片社区 |
-| 项目主题 | 海大一刻 |
-| 博客地址 | https://7m7666.github.io/ |
-| 代码仓库地址 | https://github.com/7M7666/Mobile-Development2026 |
-
-<!--more-->
-
 ## 1 实验目的
 
 1. 使用微信原生小程序和云开发完成照片社区，理解页面、云函数、云数据库和云存储之间的数据传递过程。
@@ -152,7 +140,6 @@ deletePost
 
 列表查询使用时间、动态 ID、标签或点赞数等字段组合排序，部署时还需要配置对应索引。例如最新动态按 createTime、_id 降序，热门动态在前面增加 likeCount 降序。包含删除过滤条件的查询是否还需要补充组合索引，要以真实云端的查询提示为准。
 
-<p align="center"><img src="images/cloud-functions.png" width="760" alt="云函数控制台列表"></p>
 <p align="center">图 1　云函数列表共 13 条，当前页显示的 10 个函数均为已部署状态。</p>
 
 控制台按页列出云函数，可以查看部署状态、更新时间，并进入云端测试或日志页面。
@@ -242,7 +229,6 @@ await userRef.update({ data: { postCount: db.command.inc(1) } });
 
 事务还解决了另一种不一致。如果动态写入后，更新用户发布数量失败，这次写入应一起回滚，不能留下动态已存在而发布数量未增加的状态。
 
-<p align="center"><img src="images/database-post.png" width="760" alt="posts文档字段和删除标记"></p>
 <p align="center">图 4　posts 文档中的图片引用、计数、地点及 deleted 删除标记。</p>
 
 这条历史记录的正文为空，viewCount 为 5，deleted 为 true，地点经纬度为 null。删除后仍保留原文档和图片引用，列表查询通过删除标记过滤该记录。
@@ -266,8 +252,7 @@ const { data } = await feed
 
 首页另外检查每条记录是否具有有效 _id 和非空 images 数组。不完整记录会被跳过，并记录跳过数量，不让一个缺少图片字段的文档影响同页其他动态和后续分页。
 
-<p align="center"><img src="images/home-latest.png" width="280" alt="首页最新列表中的单图动态"></p>
-<p align="center">图 5　首页最新列表显示用户 7M7 的单图动态，点赞数和评论数均为 0。</p>
+<p align="center">图 5　首页最新列表显示测试账号 的单图动态，点赞数和评论数均为 0。</p>
 
 该条动态时间为 2026.09.09 14:37，卡片右下角标注 1 张照片。作者头像、昵称、地点及图片均已显示，页面顶部另显示 1 条未读消息。
 
@@ -279,7 +264,6 @@ const { data } = await feed
 
 代码为分享配置了包含动态 ID 的详情路径，标题优先使用动态正文，没有正文时使用默认标题。本次点击分享后出现未完成认证提示，尚未走到接收者打开详情的步骤。
 
-<p align="center"><img src="images/post-detail.png" width="280" alt="单图动态详情页及操作按钮"></p>
 <p align="center">图 6　同一条单图动态的详情页，显示 1 次浏览及预览、保存、分享和删除入口。</p>
 
 首页与详情显示相同的作者、发布时间和图片。详情下方的评论数为 0，输入区为空，作者可以从浏览次数右侧的删除入口移除动态。
@@ -308,10 +292,9 @@ if (exists !== liked) {
 
 关注接口同样传递期望状态 following，同步维护关注人数与粉丝人数，并禁止关注自己。“关注”信息流先取得当前用户关注的作者，再查询这些作者的动态。关注关系按批次读取，不只读取前 100 条。
 
-<p align="center"><img src="images/database-comments.png" width="760" alt="comments集合中的ok评论"></p>
-<p align="center">图 8　comments 集合保存作者 7M7 的评论 ok，并通过 postId 关联动态。</p>
+<p align="center">图 8　comments 集合保存测试账号 的评论 ok，并通过 postId 关联动态。</p>
 
-这条评论创建于 2026 年 9 月 8 日，作者为 7M7，内容为 ok。postId 保存所属动态的标识，详情页据此查询该动态下的评论。
+这条评论创建于 2026 年 9 月 8 日，作者为测试账号，内容为 ok。postId 保存所属动态的标识，详情页据此查询该动态下的评论。
 
 <p align="center"><img src="images/home-following.png" width="280" alt="关注信息流中的已点赞动态"></p>
 <p align="center">图 9　关注信息流中的海大同学动态，点赞为选中状态，点赞数与评论数均为 1。</p>
@@ -337,13 +320,10 @@ if (res.updated !== true) {
 
 昵称要求为 1～30 字，简介最多 160 字。云函数只允许修改当前身份的资料。列表查询时会读取作者的当前昵称和头像，因此旧动态不必逐条重写作者显示信息。
 
-<p align="center"><img src="images/mine-posts.png" width="280" alt="个人主页的发布网格和统计"></p>
-<p align="center"><img src="images/profile-editor.png" width="280" alt="昵称头像封面简介编辑面板"></p>
 <p align="center">图 10　个人页的资料与发布网格，以及头像、封面、昵称和简介编辑面板。</p>
 
-个人页显示昵称 7M7、4 条发布、2 次获赞和 3 条收到的评论，发布网格中有一条标注 3 张的动态。编辑面板回填了昵称、头像和封面，简介为空，输入区右侧显示 0/160。
+个人页显示测试昵称、4 条发布、2 次获赞和 3 条收到的评论，发布网格中有一条标注 3 张的动态。编辑面板回填了昵称、头像和封面，简介为空，输入区右侧显示 0/160。
 
-<p align="center"><img src="images/mine-likes.png" width="280" alt="我的喜欢中三个动态缩略图"></p>
 <p align="center">图 11　我的喜欢中显示三条动态，其中一条标注 3 张照片。</p>
 
 喜欢列表中的三条动态分别标注 1 张、1 张和 3 张。左右两项缩略图已显示，中间一项仍为浅色块。
@@ -354,7 +334,6 @@ if (res.updated !== true) {
 
 热门标签从最新 100 条未删除动态中统计，按出现次数取前 15 个。这个范围适合当前实验的数据量，但只能代表最近这些动态。点击标签后按标签筛选，再次点击已选标签取消筛选。
 
-<p align="center"><img src="images/discover.png" width="280" alt="发现页热门标签推荐用户及照片网格"></p>
 <p align="center">图 12　发现页显示热门标签、关注入口和最新照片双列列表。</p>
 
 发现页显示 #帅哥、#海大 两个标签，当前选中全部和最新照片。推荐区域有关注按钮，下方以双列布局展示照片，照片下方显示作者与点赞数量。
@@ -374,8 +353,6 @@ if (res.updated !== true) {
 
 删除使用 deleted: true 标记隐藏动态，并在事务中扣回发布数量、收到的点赞数和评论数。保留原记录可以阻止旧发布请求把动态重新创建出来。之后按批次清理关联点赞、评论和通知，重复删除不会重复扣数。原云图片暂不物理删除。
 
-<p align="center"><img src="images/delete-confirm.png" width="300" alt="删除动态确认弹窗"></p>
-<p align="center"><img src="images/delete-result.png" width="380" alt="删除后我的发布剩余三条"></p>
 <p align="center">图 14　删除动态前的确认弹窗与操作后剩余的三条发布。</p>
 
 删除前，我的发布中有四条动态。确认删除后，最左侧的题目截图动态消失，另外三条仍然保留，与图 10 中的列表形成对照。
@@ -410,7 +387,7 @@ if (res.updated !== true) {
 | 发布初始状态 | 照片数量为 0/9，地点为中国海洋大学，发布按钮为灰色 | 图 2 |
 | 动态提交 | 选择一张照片后显示保存动态 95% 及重试确认发布状态 | 图 3 |
 | 数据库记录 | posts 文档保存图片引用、计数、地点和删除标记 | 图 4 |
-| 最新动态 | 显示 7M7 发布的单图动态及作者信息 | 图 5 |
+| 最新动态 | 显示 测试账号发布的单图动态及作者信息 | 图 5 |
 | 动态详情 | 显示同一动态内容、1 次浏览、评论区及操作按钮 | 图 6 |
 | 分享 | 提示小程序未完成认证，分享被中断 | 图 7 |
 | 评论存储 | comments 中保存评论 ok，并关联动态 ID | 图 8 |
@@ -455,6 +432,6 @@ if (res.updated !== true) {
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-6/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-6/  
 

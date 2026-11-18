@@ -1,19 +1,6 @@
 # 2026夏移动软件开发实验一
 
 
-<div align="center">
-姓名：李宛霖　　学号：24020007064
-</div>
-
-| 项目 | 内容 |
-| :--- | :--- |
-| 课程 | 中国海洋大学26夏《移动软件开发》 |
-| 实验名称 | 实验 1：第一个微信小程序 |
-
-<!--more-->
-
----
-
 ## 一、实验内容
 
 ### （一）实验目的
@@ -28,9 +15,7 @@
 
 #### 2. 用 WXML 放置页面内容
 
-我在 `index.wxml` 中保留了项目自带的导航栏，将标题写成 `HELLO {{wording}}`。`{{wording}}` 会读取 `index.js` 中同名的数据。页面主体中放入了文字 `lwl`、一个“点我！”按钮和一张猫meme。
-
-![](2026-08-24-14-28-01.png)
+我在 `index.wxml` 中保留了项目自带的导航栏，将标题写成 `HELLO {{wording}}`。`{{wording}}` 会读取 `index.js` 中同名的数据。页面主体中放入了文字 `示例文字`、一个“点我！”按钮和一张猫meme。
 
 <p align="center">图 1　WXML 页面结构及运行效果</p>
 
@@ -40,13 +25,9 @@ button的 `bind:tap="onClick"` 是为了用户点击按钮时，小程序会去 
 
 `wording` 的初始值是 `girl`，所以页面刚打开时标题显示为 `HELLO girl`。每点击一次按钮，`onClick` 就执行一次。我用三元表达式判断当前是 `girl` 还是 `boy`，这样就可以更新数据。
 
-![](2026-08-24-14-31-29.png)
-
 <p align="center">图 2　JavaScript 中的标题切换代码</p>
 
 `wording` 的值发生变化后，WXML 中绑定它的标题会跟着重新显示。
-
-![](2026-08-24-14-33-13.png)
 
 <p align="center">图 3　点击按钮后标题变为 HELLO boy</p>
 
@@ -62,7 +43,7 @@ button的 `bind:tap="onClick"` 是为了用户点击按钮时，小程序会去 
 
 | 操作 | 标题显示 | 页面变化 |
 | :--- | :--- | :--- |
-| 初始打开 | `HELLO girl` | 显示 `lwl`、按钮和本地图片 |
+| 初始打开 | `HELLO girl` | 显示 `示例文字`、按钮和本地图片 |
 | 第一次点击 | `HELLO boy` | 页面其他内容不变 |
 | 再次点击 | `HELLO girl` | 标题切换回初始状态 |
 
@@ -93,6 +74,6 @@ button的 `bind:tap="onClick"` 是为了用户点击按钮时，小程序会去 
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-1/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-1/  
 

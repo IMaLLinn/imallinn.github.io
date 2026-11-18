@@ -1,21 +1,6 @@
 # 2026夏移动软件开发实验二
 
 
-<div align="center">
-姓名：李宛霖　　学号：24020007064
-</div>
-
-| 姓名和学号？ | 李宛霖，24020007064 |
-| --- | --- |
-| 本实验属于哪门课程？ | 中国海洋大学26夏《移动软件开发》 |
-| 实验名称？ | 实验2：名片小程序 |
-| 博客地址？ | https://7m7666.github.io/ |
-| 代码仓库地址？ | https://github.com/7M7666/Mobile-Development2026 |
-
-<!--more-->
-
----
-
 ## 一、实验内容
 
 ### （一）实验目的
@@ -26,9 +11,7 @@
 
 #### 1. 准备名片头图
 
-我先根据自己的专业和兴趣制作了一张 16:9 横版头图，图片使用深蓝和紫色的像素风格，内容包括中国海洋大学、数据科学与大数据技术，以及代码、数据、算法和游戏等关键词。完成后将图片保存为 `img/card.png`，供小程序首页使用。
-
-![](img/card.png)
+我先根据自己的专业和兴趣制作了一张 16:9 横版头图，图片使用深蓝和紫色的像素风格，内容包括代码、数据、算法和游戏等关键词。完成后将图片保存为 `img/card.png`，供小程序首页使用。
 
 <p align="center">图 1　名片小程序使用的 16:9 头图</p>
 
@@ -37,8 +20,6 @@
 首页继续使用项目自带的导航栏，标题设置为“个人名片”。头图通过 `<image>` 引入，`mode="widthFix"` 可以在图片宽度变化时保持原来的宽高比例。
 
 图片下方是 `Personal Card`，再往下使用 `scroll-view` 放置个人介绍。正文使用多个 `view` 分段，主要包括“关于我”、个人简介、兴趣爱好和最后的 `GAME & LIFE`。
-
-![](2026-08-25-11-00-38.png)
 
 <p align="center">图 2　首页的 WXML 页面结构</p>
 
@@ -67,8 +48,6 @@
 ![](image.png)
 
 <p align="center">图 5　“关于我”标题和 GAME & LIFE 的样式设置</p>
-
-![](8d5294f951b0fbcfeb8ed4a6de957acb.jpg)
 
 <p align="center">图 6　名片小程序的真机运行效果</p>
 
@@ -117,6 +96,6 @@
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-2/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-2/  
 

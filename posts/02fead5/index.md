@@ -227,6 +227,6 @@
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/02fead5/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/02fead5/  
 

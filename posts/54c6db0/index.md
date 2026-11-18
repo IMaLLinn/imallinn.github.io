@@ -351,6 +351,6 @@ JavaSE 后半段可以按这条线复习：
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/54c6db0/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/54c6db0/  
 

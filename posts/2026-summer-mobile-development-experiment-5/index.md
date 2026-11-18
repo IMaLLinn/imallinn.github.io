@@ -1,18 +1,6 @@
 # 2026夏移动软件开发实验五
 
 
-<div align="center">姓名：李宛霖　　学号：24020007064</div>
-
-| 项目 | 内容 |
-| --- | --- |
-| 课程 | 中国海洋大学《移动软件开发》 |
-| 实验名称 | 实验 5：HarmonyOS 多功能计算器 |
-| 项目主题 | 基础计算、科学计算与函数图像 |
-| 博客地址 | https://7m7666.github.io/ |
-| 代码仓库地址 | https://github.com/7M7666/Mobile-Development2026 |
-
-<!--more-->
-
 ## 1 实验目的
 
 1. 使用 DevEco Studio、ArkTS 和 ArkUI 开发 HarmonyOS 应用，理解应用入口、页面组件与工具类的分工。
@@ -436,6 +424,6 @@ this.refreshAnswer();
 
 ---
 
-> 作者: 7M7  
-> URL: https://7m7666.github.io/posts/2026-summer-mobile-development-experiment-5/  
+> 作者: Jude Linn  
+> URL: https://imallinn.github.io/posts/2026-summer-mobile-development-experiment-5/  
 
