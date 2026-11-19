@@ -1,5 +1,6 @@
 ---
 title: "2026夏移动软件开发实验二"
+displayTitle: "个人名片小程序 · WXML 视觉排版实践"
 pubDate: 2026-08-25T11:07:00+08:00
 slug: 2026-summer-mobile-development-experiment-2
 draft: false

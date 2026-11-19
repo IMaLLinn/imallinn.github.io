@@ -52,12 +52,13 @@ const current = (url: string) => url === '/' ? Astro.url.pathname === url : Astr
     <a href="#main" class="skip-link">跳至正文</a>
     <header class="topbar">
       <div class="site-width topbar-inner">
-        <a class="brand" href="/" aria-label={site.name + '首页'}><span class="brand-icon"><Icon name="terminal" size={19} /></span><span>{site.name}</span></a>
-        <nav aria-label="主导航">
+        <a class="brand" href="/" aria-label={site.name + '首页'}>{site.name}</a>
+        <nav class="nav-pill" aria-label="主导航" transition:persist="primary-nav">
+          <span class="nav-indicator" aria-hidden="true"></span>
           {site.nav.map(({ label, href }) => <a href={href} class:list={{ current: current(href) }} aria-current={current(href) ? 'page' : undefined}>{label}</a>)}
         </nav>
         <div class="nav-actions">
-          <button type="button" class="nav-search" aria-label="打开命令面板" data-command-open><Icon name="search" size={16} /><span>搜索</span><kbd class="mono"><span data-modifier>Ctrl</span><span>K</span></kbd></button>
+          <button type="button" class="nav-search" aria-label="打开命令面板" data-command-open><Icon name="search" size={17} /><kbd class="mono" aria-hidden="true"><span data-modifier>Ctrl</span><span>K</span></kbd></button>
           <button type="button" class="theme-toggle" aria-label="切换浅色或暗黑主题" data-theme-toggle>
             <span class="icon-moon"><Icon name="moon" size={17} /></span><span class="icon-sun"><Icon name="sun" size={17} /></span>
           </button>

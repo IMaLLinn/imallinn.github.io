@@ -1,0 +1,46 @@
+---
+import Icon from './Icon.astro';
+
+const level = [
+  '#...#',
+  '...g.',
+  '..b..',
+  '..p..',
+  '#...#',
+].join('');
+const controls = [
+  ['left', '←', '左移'], ['up', '↑', '上移'], ['down', '↓', '下移'], ['right', '→', '右移'],
+];
+---
+<div class="mini-sokoban" data-sokoban>
+  <p class="sr-only" id="sokoban-help">用方向键或点击相邻的格子移动小猫，把箱子推到空心目标格。</p>
+  <div class="puzzle-board" data-sokoban-board role="group" tabindex="0" aria-label="迷你推箱子" aria-describedby="sokoban-help">
+    {[...level].map((cell, index) => (
+      <span class="puzzle-cell" data-cell={index} data-tile={cell} aria-hidden="true">
+        {cell === 'g' && <span class="puzzle-goal"></span>}
+        {cell === 'b' && (
+          <svg class="puzzle-piece" data-box viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path fill="#f4ead6" d="M2 2h12v12H2z"/>
+            <path fill="#c0aa83" d="M4 4h8v8H4z"/>
+            <path stroke="#6d5c42" stroke-width="2" d="m5 5 6 6m0-6-6 6"/>
+          </svg>
+        )}
+        {cell === 'p' && (
+          <svg class="puzzle-piece" data-player viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path fill="#f3bd76" d="M3 2h2v3h6V2h2v4h1v6h-2v2H4v-2H2V6h1z"/>
+            <path fill="#fff0d3" d="M4 11h8v2H4z"/>
+            <path fill="#292521" d="M4 8h2v2H4zm6 0h2v2h-2z"/>
+          </svg>
+        )}
+      </span>
+    ))}
+  </div>
+  <div class="puzzle-toolbar">
+    <div class="puzzle-directions" aria-label="小猫移动方向" role="group">
+      {controls.map(([direction, glyph, label]) => <button type="button" data-move={direction} aria-label={label}>{glyph}</button>)}
+    </div>
+    <button class="puzzle-restart" type="button" data-restart aria-label="重玩推箱子" title="重玩"><Icon name="rotate-ccw" size={15} /></button>
+  </div>
+  <span class="sr-only" data-sokoban-status role="status"></span>
+  <p class="puzzle-complete" aria-hidden="true">已到位</p>
+</div>

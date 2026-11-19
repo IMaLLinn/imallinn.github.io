@@ -1,17 +1,23 @@
 ---
 import type { Post } from '../lib/posts';
 import { titleOf } from '../lib/posts';
+import MiniSokoban from './MiniSokoban.astro';
 
-const { post, priority = false } = Astro.props as { post: Post; priority?: boolean };
+const { post, priority = false, presentation } = Astro.props as {
+  post: Post;
+  priority?: boolean;
+  presentation?: 'vertical' | 'horizontal';
+};
 const { cover, visualStyle, accent, tags } = post.data;
 const technologies = tags.join(' ').toLowerCase();
-const style = visualStyle ?? (
+const inferred = visualStyle ?? (
   /游戏|pixel|game/.test(technologies) ? 'pixel' :
   /计算器|chart|数据可视化/.test(technologies) ? 'chart' :
   /linux|csapp|shell|系统/.test(technologies) ? 'terminal' :
   accent === 'amber' ? 'terminal' :
   accent === 'violet' ? 'chart' : 'grid'
 );
+const style = presentation === 'vertical' ? 'pixel' : presentation === 'horizontal' ? 'chart' : inferred;
 const maze = [
   '#########',
   '##.....##',
@@ -24,8 +30,9 @@ const maze = [
 ];
 ---
 <div class:list={['project-visual', 'visual-' + style]} data-project-visual>
-  <div class="visual-fallback" hidden={Boolean(cover)} aria-hidden="true">
-    {style === 'pixel' && (
+  <div class="visual-fallback" hidden={Boolean(cover)} aria-hidden={presentation === 'vertical' ? undefined : 'true'}>
+    {presentation === 'vertical' && <MiniSokoban />}
+    {style === 'pixel' && presentation !== 'vertical' && (
       <div class="pixel-scene">
         <div class="pixel-head"><span><i></i> {tags.find((tag) => /canvas|pixel|游戏/i.test(tag)) ?? 'PIXEL'}</span><span>LV. 01</span></div>
         <svg class="pixel-board" viewBox="0 0 144 128" shape-rendering="crispEdges" aria-hidden="true">
@@ -46,14 +53,16 @@ const maze = [
       </div>
     )}
     {style === 'chart' && (
-      <div class="mini-window chart-window">
-        <div class="mini-title"><span><i></i><i></i><i></i></span><b>ƒ(x)</b></div>
+      <div class="mini-window chart-window" data-function-plot={presentation === 'horizontal' ? '' : undefined}>
+        <div class="mini-title"><span><i></i><i></i><i></i></span>
+          {presentation === 'horizontal' ? <b class="plot-reading" data-plot-reading>f(x) = 0.00</b> : <b>ƒ(x)</b>}
+        </div>
         <svg viewBox="0 0 210 76" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 15h210M0 30h210M0 45h210M0 60h210M21 0v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76" stroke="currentColor" opacity=".15" fill="none"/>
           <path d="M0 45h210M105 0v76" stroke="currentColor" opacity=".38" fill="none"/>
-          <path d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49v63H0Z" fill="var(--accent)" opacity=".07"/>
-          <path d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49" stroke="var(--accent)" stroke-width="2" fill="none"/>
-          <circle cx="105" cy="54" r="3" fill="var(--accent)"/>
+          <path data-plot-area d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49v63H0Z" fill="var(--accent)" opacity=".07"/>
+          <path data-plot-line d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49" stroke="var(--accent)" stroke-width="2" fill="none" vector-effect="non-scaling-stroke"/>
+          <circle data-plot-dot cx="105" cy="54" r="3" fill="var(--accent)"/>
         </svg>
         <div class="mini-keys">{['sin', 'cos', 'tan', 'π', '√', '='].map((key) => <span>{key}</span>)}</div>
       </div>

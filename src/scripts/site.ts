@@ -5,11 +5,7 @@ import { loadSearchPosts } from './search';
 
 const root = document.documentElement;
 const modifier = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
-const clockFormat = new Intl.DateTimeFormat('zh-CN', {
-  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
-});
 let dark = root.classList.contains('dark');
-let clockTimer: number | undefined;
 let toastTimer: number | undefined;
 let fuse: Fuse<SearchPost> | undefined;
 
@@ -195,6 +191,53 @@ function setupCommand(dialog: HTMLDialogElement, signal: AbortSignal) {
   input.addEventListener('input', () => void search(), { signal });
 }
 
+function setupNavigation(nav: HTMLElement, signal: AbortSignal) {
+  const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
+  let current: HTMLAnchorElement | undefined;
+  let hovered: HTMLAnchorElement | null = null;
+  let focused: HTMLAnchorElement | null = null;
+
+  function placeIndicator() {
+    const link = hovered ?? focused ?? current;
+    nav.style.setProperty('--nav-x', `${link?.offsetLeft ?? 0}px`);
+    nav.style.setProperty('--nav-width', `${link?.offsetWidth ?? 0}px`);
+    nav.toggleAttribute('data-indicator', !!link);
+  }
+
+  function syncCurrent() {
+    const pathname = location.pathname;
+    current = links.find(({ pathname: href }) => href === '/' ? pathname === href : pathname.startsWith(href));
+    for (const link of links) {
+      link.classList.toggle('current', link === current);
+      if (link === current) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+    placeIndicator();
+  }
+
+  function linkAt(target: EventTarget | null) {
+    const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
+    return link && nav.contains(link) ? link : null;
+  }
+
+  nav.addEventListener('pointerover', (event) => {
+    if (event.pointerType === 'touch') return;
+    hovered = linkAt(event.target);
+    placeIndicator();
+  }, { signal });
+  nav.addEventListener('pointerleave', () => { hovered = null; placeIndicator(); }, { signal });
+  nav.addEventListener('focusin', (event) => { focused = linkAt(event.target); placeIndicator(); }, { signal });
+  nav.addEventListener('focusout', (event) => { focused = linkAt(event.relatedTarget); placeIndicator(); }, { signal });
+  document.addEventListener('astro:after-swap', syncCurrent, { signal });
+
+  const resize = new ResizeObserver(placeIndicator);
+  resize.observe(nav);
+  for (const link of links) resize.observe(link);
+  signal.addEventListener('abort', () => resize.disconnect(), { once: true });
+  syncCurrent();
+  nav.dataset.ready = '';
+}
+
 let pageListeners: AbortController | undefined;
 document.addEventListener('astro:page-load', () => {
   pageListeners?.abort();
@@ -202,15 +245,10 @@ document.addEventListener('astro:page-load', () => {
   const { signal } = pageListeners;
   const dialog = document.querySelector<HTMLDialogElement>('[data-command]');
   if (dialog) setupCommand(dialog, signal);
+  const nav = document.querySelector<HTMLElement>('.nav-pill');
+  if (nav) setupNavigation(nav, signal);
 
   for (const key of document.querySelectorAll('[data-modifier]')) key.textContent = modifier;
-  window.clearInterval(clockTimer);
-  const clock = document.querySelector<HTMLElement>('[data-clock]');
-  if (clock) {
-    const updateClock = () => { clock.textContent = clockFormat.format(); };
-    updateClock();
-    clockTimer = window.setInterval(updateClock, 1000);
-  }
 
   for (const tile of document.querySelectorAll<HTMLElement>('.bento .tile')) {
     tile.addEventListener('pointermove', (event) => {

@@ -1,0 +1,55 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../config/site';
+
+const { posts, series } = Astro.props as { posts: number; series: number };
+const weeks = 14;
+const dayMs = 86_400_000;
+const today = new Date();
+today.setUTCHours(0, 0, 0, 0);
+const start = today.getTime() - ((weeks - 1) * 7 + today.getUTCDay()) * dayMs;
+const dates = Array.from({ length: weeks * 7 }, (_, day) => new Date(start + day * dayMs).toISOString().slice(0, 10));
+const lastDate = today.toISOString().slice(0, 10);
+
+async function recentLevels() {
+  const levels = new Map<string, number>();
+  try {
+    const url = `https://github.com/users/${encodeURIComponent(site.githubUser)}/contributions`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (!response.ok) return levels;
+    for (const [cell] of (await response.text()).matchAll(/<td\b[^>]*\bdata-date="\d{4}-\d{2}-\d{2}"[^>]*>/g)) {
+      const date = /\bdata-date="([^"]+)"/.exec(cell)?.[1];
+      const level = /\bdata-level="([0-4])"/.exec(cell)?.[1];
+      if (date && level !== undefined) levels.set(date, Number(level));
+    }
+  } catch {
+    // Unavailable or changed public calendar markup falls back to the sample below.
+  }
+  return levels;
+}
+
+const levels = await recentLevels();
+const actual = dates.filter((date) => date <= lastDate);
+const live = actual.filter((date) => levels.has(date)).length >= actual.length - 2 && levels.has(actual.at(-3)!);
+const example = [
+  '0010000', '0001100', '2011000', '0000020', '0134100', '0000100', '0100000',
+  '0011200', '2000000', '0001100', '0322100', '1000110', '0234000', '1011200',
+].join('');
+const days = dates.map((date, index) => ({
+  date,
+  level: date > lastDate ? undefined : live ? levels.get(date) : Number(example[index]),
+}));
+---
+<a class="tile github-activity" href={site.github} target="_blank" rel="noopener" aria-label={`查看 @${site.githubUser} 的 GitHub 主页`} data-activity-source={live ? 'github' : 'sample'}>
+  <div class="activity-heading">
+    <h2 class="tile-label"><Icon name="github" size={16} /> GitHub Activity</h2>
+    <Icon name="arrow-up-right" size={15} />
+  </div>
+  <div class="activity-grid" style={`--activity-weeks: ${weeks}`} role="img" aria-label={live ? '最近十四周的公开贡献等级' : '十四周贡献网格示意，公开数据暂不可用'}>
+    {days.map(({ date, level }) => <span class="activity-cell" data-level={level} title={live && level !== undefined ? date + ' · 活跃等级 ' + level : undefined}></span>)}
+  </div>
+  <div class="activity-footer mono">
+    <span>@{site.githubUser}{!live && <small>示意</small>}</span>
+    <span>{posts} posts · {series} series</span>
+  </div>
+</a>

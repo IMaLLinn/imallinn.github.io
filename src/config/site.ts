@@ -1,4 +1,4 @@
-const heroDescription = ['Jude Linn 的个人技术笔记。', '写编程、', '计算机系统与', '移动开发实践。'];
+const githubUser = 'IMaLLinn';
 
 export const site = {
   name: 'Jude Linn',
@@ -6,16 +6,16 @@ export const site = {
   url: 'https://imallinn.github.io',
   locale: 'zh-CN',
   timeZone: 'Asia/Shanghai',
-  github: 'https://github.com/IMaLLinn',
+  githubUser,
+  github: 'https://github.com/' + githubUser,
   rss: '/index.xml',
   avatar: '/apple-touch-icon.png',
   defaultTheme: 'light' as 'light' | 'dark',
   status: 'Building Systems & Apps',
-  headline: ['记录我学过的，', '和做过的。'],
-  description: heroDescription.join(''),
-  heroDescription,
+  headline: ["Jude's", 'Workspace.'],
+  description: 'Jude Linn 的个人技术笔记。写编程、计算机系统与移动开发实践。',
+  heroDescription: ['CS 在读 · 写代码、', '折腾系统，', '顺手存点笔记。'],
   about: '我在这里整理编程笔记、计算机系统实验和移动端项目。写下实现过程里遇到的问题，也留一份以后能查回来的记录。',
-  focus: '计算机系统 · 移动开发',
   nav: [
     { label: '首页', href: '/', icon: 'terminal' },
     { label: '文章', href: '/posts/', icon: 'file-text' },
@@ -28,6 +28,7 @@ export const site = {
     { label: 'ArkTS', icon: 'layers' },
     { label: '微信小程序', icon: 'messages-square' },
     { label: 'C / C++', icon: 'braces' },
+    { label: 'Java', icon: 'coffee' },
     { label: 'Astro', icon: 'rocket' },
     { label: 'Linux', icon: 'terminal' },
     { label: 'Git', icon: 'git-branch' },
