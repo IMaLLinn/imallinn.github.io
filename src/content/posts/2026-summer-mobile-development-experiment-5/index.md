@@ -11,7 +11,6 @@ series: "移动软件开发实验"
 comment: true
 seriesOrder: 5
 displayTitle: "HarmonyOS 多功能科学计算器"
-featured: "horizontal"
 visualStyle: "chart"
 accent: "violet"
 ---

@@ -17,7 +17,8 @@ const inferred = visualStyle ?? (
   accent === 'amber' ? 'terminal' :
   accent === 'violet' ? 'chart' : 'grid'
 );
-const style = presentation === 'vertical' ? 'pixel' : presentation === 'horizontal' ? 'chart' : inferred;
+const style = inferred;
+const isCalculator = /计算器/.test(technologies);
 const maze = [
   '#########',
   '##.....##',
@@ -31,7 +32,7 @@ const maze = [
 ---
 <div class:list={['project-visual', 'visual-' + style]} data-project-visual>
   <div class="visual-fallback" hidden={Boolean(cover)} aria-hidden={presentation === 'vertical' ? undefined : 'true'}>
-    {presentation === 'vertical' && <MiniSokoban />}
+    {style === 'pixel' && presentation === 'vertical' && <MiniSokoban />}
     {style === 'pixel' && presentation !== 'vertical' && (
       <div class="pixel-scene">
         <div class="pixel-head"><span><i></i> {tags.find((tag) => /canvas|pixel|游戏/i.test(tag)) ?? 'PIXEL'}</span><span>LV. 01</span></div>
@@ -53,9 +54,9 @@ const maze = [
       </div>
     )}
     {style === 'chart' && (
-      <div class="mini-window chart-window" data-function-plot={presentation === 'horizontal' ? '' : undefined}>
+      <div class="mini-window chart-window" data-function-plot={isCalculator && presentation === 'horizontal' ? '' : undefined}>
         <div class="mini-title"><span><i></i><i></i><i></i></span>
-          {presentation === 'horizontal' ? <b class="plot-reading" data-plot-reading>f(x) = 0.00</b> : <b>ƒ(x)</b>}
+          {isCalculator && presentation === 'horizontal' ? <b class="plot-reading" data-plot-reading>f(x) = 0.00</b> : <b>{isCalculator ? 'ƒ(x)' : 'chart'}</b>}
         </div>
         <svg viewBox="0 0 210 76" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 15h210M0 30h210M0 45h210M0 60h210M21 0v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76" stroke="currentColor" opacity=".15" fill="none"/>
@@ -64,13 +65,13 @@ const maze = [
           <path data-plot-line d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49" stroke="var(--accent)" stroke-width="2" fill="none" vector-effect="non-scaling-stroke"/>
           <circle data-plot-dot cx="105" cy="54" r="3" fill="var(--accent)"/>
         </svg>
-        <div class="mini-keys">{['sin', 'cos', 'tan', 'π', '√', '='].map((key) => <span>{key}</span>)}</div>
+        {isCalculator && <div class="mini-keys">{['sin', 'cos', 'tan', 'π', '√', '='].map((key) => <span>{key}</span>)}</div>}
       </div>
     )}
     {style === 'terminal' && (
       <div class="mini-window terminal-window">
         <div class="mini-title"><span><i></i><i></i><i></i></span><b>~</b></div>
-        <div class="terminal-lines"><span>$ <b>./run</b></span><span><i></i><i></i></span><span><i></i><i></i><i></i></span><span>$ <b>▍</b></span></div>
+        <div class="terminal-lines"><span>$ <b>./run</b></span><span><i></i><i></i></span><span><i></i><i></i><i></i></span>{presentation === 'vertical' && (<><span><i></i><i></i></span><span>$ <b>./run</b></span><span><i></i><i></i><i></i></span></>)}<span>$ <b>▍</b></span></div>
       </div>
     )}
     {style === 'grid' && (

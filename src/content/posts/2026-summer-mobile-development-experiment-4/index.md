@@ -11,7 +11,6 @@ series: "移动软件开发实验"
 comment: true
 seriesOrder: 4
 displayTitle: "MEOW PUSH 像素推箱子"
-featured: "vertical"
 visualStyle: "pixel"
 ---
 

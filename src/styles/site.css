@@ -238,6 +238,7 @@ button:not(:disabled) { cursor: pointer; }
 .mini-keys span { padding: 2px 0; text-align: center; font: 600 .59rem/1.35 var(--mono); border-radius: 3px; background: var(--soft); color: var(--body); }
 .mini-keys span:last-child { background: var(--ink); color: var(--card); }
 .terminal-window { background: #141416; color: #d4d4d8; }
+.vertical-feature .terminal-window { width: min(92%, 260px); }
 .terminal-lines { display: grid; gap: 10px; padding: 7px 4px 3px; font: 500 .73rem/1 var(--mono); }
 .terminal-lines i { height: 3px; width: 20px; border-radius: 4px; background: #71717a; }
 .terminal-lines i:nth-child(2) { width: 35px; background: #52525b; }
