@@ -4,6 +4,7 @@ displayTitle: "个人名片小程序 · WXML 视觉排版实践"
 pubDate: 2026-08-25T11:07:00+08:00
 slug: 2026-summer-mobile-development-experiment-2
 draft: false
+archived: true
 description: "记录微信名片小程序的页面结构、头图设计、WXSS 排版与 Skyline 渲染问题。"
 summary: "使用 WXML 和 WXSS 制作个人名片小程序，完成 16:9 头图、个人介绍、滚动区域与紫色主题排版。"
 tags: ["微信小程序", "WXML", "WXSS", "Skyline"]

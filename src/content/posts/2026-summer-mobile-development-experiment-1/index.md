@@ -3,6 +3,7 @@ title: "2026夏移动软件开发实验一"
 pubDate: 2026-08-24T14:45:00+08:00
 slug: 2026-summer-mobile-development-experiment-1
 draft: false
+archived: true
 description: "记录微信小程序实验一的页面结构、样式设计、数据绑定与按钮交互实现过程。"
 summary: "通过 WXML、WXSS 和 JavaScript 完成第一个微信小程序，实现本地图片展示与按钮点击切换标题。"
 tags: ["微信小程序", "WXML", "WXSS", "JavaScript"]

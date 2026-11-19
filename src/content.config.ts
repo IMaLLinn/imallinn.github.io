@@ -24,6 +24,7 @@ const posts = defineCollection({
     repoUrl: webUrl.optional(),
     demoUrl: webUrl.optional(),
     draft: z.boolean().default(false),
+    archived: z.boolean().default(false),
     summary: z.string().optional(),
     author: z.string().optional(),
     comment: z.boolean().optional(),

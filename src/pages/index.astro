@@ -5,9 +5,9 @@ import Icon from '../components/Icon.astro';
 import PostRow from '../components/PostRow.astro';
 import ProjectVisual from '../components/ProjectVisual.astro';
 import { site } from '../config/site';
-import { featuredPost, filterHref, postHref, publishedPosts, titleOf, topicsOf } from '../lib/posts';
+import { activePosts, featuredPost, filterHref, postHref, titleOf, topicsOf } from '../lib/posts';
 
-const posts = await publishedPosts();
+const posts = await activePosts();
 const vertical = featuredPost(posts, 'vertical');
 const horizontal = featuredPost(posts, 'horizontal');
 const topics = topicsOf(posts);

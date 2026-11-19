@@ -2,6 +2,7 @@
 title: "JavaSE 基础笔记（一）：输入、方法、数组与面向对象入门"
 pubDate: 2025-11-11T23:20:50+08:00
 draft: false
+archived: true
 description: "JavaSE 入门阶段的复习笔记，整理 Scanner、可变参数、内存模型、数组和面向对象基础。"
 summary: "JavaSE 入门阶段的复习笔记，整理 Scanner、可变参数、内存模型、数组和面向对象基础。"
 tags: ["Java"]

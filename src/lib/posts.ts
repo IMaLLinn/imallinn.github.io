@@ -30,6 +30,10 @@ export async function publishedPosts() {
   return posts.sort((a, b) => +b.data.pubDate - +a.data.pubDate || slugOf(a).localeCompare(slugOf(b)));
 }
 
+export async function activePosts() {
+  return (await publishedPosts()).filter(({ data }) => !data.archived);
+}
+
 export function featuredPost(posts: Post[], slot: NonNullable<Post['data']['featured']>) {
   return posts.filter(({ data }) => data.featured === slot).sort((a, b) =>
     (a.data.featuredOrder ?? Infinity) - (b.data.featuredOrder ?? Infinity) || +b.data.pubDate - +a.data.pubDate,
