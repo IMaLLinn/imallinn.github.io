@@ -5,7 +5,7 @@ slug: 2026-summer-mobile-development-experiment-4
 draft: false
 description: "记录 MEOW PUSH 像素推饭碗小程序的 Canvas 绘制、推箱子规则、关卡设计、手势控制与本地进度保存。"
 summary: "使用原生微信小程序 Canvas 2D 制作 MEOW PUSH 像素推箱子游戏，实现四关流程、Swipe、Undo、计时、音效和进度存档。"
-tags: ["微信小程序", "Canvas", "JavaScript", "小游戏", "Storage"]
+tags: ["微信小程序", "Canvas", "JavaScript", "小游戏", "Storage", "项目"]
 categories: ["移动软件开发"]
 series: "移动软件开发实验"
 comment: true

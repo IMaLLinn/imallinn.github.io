@@ -5,7 +5,7 @@ slug: 2026-summer-mobile-development-experiment-5
 draft: false
 description: "记录 HarmonyOS 多功能计算器的 ArkTS、ArkUI、科学运算、函数图像、历史记录与主题设置实现。"
 summary: "基于 ArkTS 与 ArkUI 的鸿蒙科学计算器，支持实时函数绘图与本地偏好持久化。"
-tags: ["HarmonyOS", "ArkTS", "ArkUI", "Canvas", "计算器"]
+tags: ["HarmonyOS", "ArkTS", "ArkUI", "Canvas", "计算器", "项目"]
 categories: ["移动软件开发"]
 series: "移动软件开发实验"
 comment: true
