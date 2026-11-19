@@ -1,0 +1,91 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import PostRow from '../components/PostRow.astro';
+import ProjectVisual from '../components/ProjectVisual.astro';
+import { site } from '../config/site';
+import { featuredPost, filterHref, postHref, publishedPosts, titleOf, topicsOf } from '../lib/posts';
+
+const posts = await publishedPosts();
+const vertical = featuredPost(posts, 'vertical');
+const horizontal = featuredPost(posts, 'horizontal');
+const topics = topicsOf(posts);
+---
+<Base>
+  <div class="bento grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <section class="tile hero lg:col-span-2 lg:row-span-2">
+      <div class="hero-content">
+        <p class="status-pill mono"><span class="status-dot"></span>{site.status}</p>
+        <h1>{site.headline.map((line) => <span>{line}</span>)}</h1>
+        <p class="hero-description">{site.heroDescription.map((phrase) => <><wbr /><span>{phrase}</span></>)}</p>
+      </div>
+      <div class="hero-actions">
+        <a class="avatar" href="/about/" aria-label={site.name}><img src={site.avatar} width="34" height="34" alt="" /></a>
+        <a class="soft-button" href={site.github} target="_blank" rel="noopener"><Icon name="github" size={15} /> GitHub <Icon name="arrow-up-right" size={12} /></a>
+        <a class="soft-button" href={site.rss}><Icon name="rss" size={14} /> RSS</a>
+        <a class="soft-button" href="/about/"><Icon name="user" size={14} /> 关于我</a>
+      </div>
+    </section>
+
+    <a href={vertical ? postHref(vertical) : '/projects/'} class="tile vertical-feature lg:row-span-2">
+      <div class="feature-top"><span><Icon name="box" size={15} /> 主打项目</span><span class="feature-arrow"><Icon name="arrow-up-right" size={18} /></span></div>
+      {vertical && <ProjectVisual post={vertical} priority />}
+      <div class="feature-caption">
+        <h2>{vertical ? titleOf(vertical) : '查看项目'}</h2>
+        {vertical && <div class="feature-tags">{vertical.data.tags.slice(0, 2).map((tag) => <span>{tag}</span>)}</div>}
+      </div>
+    </a>
+
+    <button type="button" class="tile shortcut" data-command-open>
+      <div class="shortcut-keys mono"><kbd data-modifier>Ctrl</kbd><span>+</span><kbd>K</kbd></div>
+      <span class="shortcut-label"><Icon name="search" size={14} /> 打开命令面板</span>
+    </button>
+
+    <section class="tile dashboard">
+      <h2 class="tile-label"><Icon name="activity" size={17} /> 实时状态</h2>
+      <div class="clock-line"><time class="mono" data-clock>--:--:--</time><span>本地时间</span></div>
+      <div class="dashboard-bottom">
+        <span class="focus-pill"><i></i>{site.focus}</span>
+        <dl><div><dt>文章</dt><dd class="mono">{posts.length}</dd></div><div><dt>专题</dt><dd class="mono">{topics.length}</dd></div></dl>
+      </div>
+    </section>
+
+    <section class="tile tech-tile lg:col-span-2">
+      <h2 class="tile-label"><Icon name="grid" size={17} /> Tech Stack</h2>
+      <ul class="stack-list">
+        {site.stack.map(({ label, icon }) => <li><Icon name={icon} size={17} /><span>{label}</span></li>)}
+      </ul>
+    </section>
+
+    <a href={horizontal ? postHref(horizontal) : '/projects/'} class="tile horizontal-feature lg:col-span-2">
+      <div class="horizontal-copy">
+        <span class="tile-label"><Icon name="layers" size={16} /> {horizontal?.data.tags[0] ?? '精选项目'}</span>
+        <h2>{horizontal ? titleOf(horizontal) : '查看项目'}</h2>
+        {horizontal && <p>{horizontal.data.summary || horizontal.data.description}</p>}
+      </div>
+      {horizontal && <ProjectVisual post={horizontal} priority />}
+      <span class="horizontal-arrow"><Icon name="arrow-up-right" size={18} /></span>
+    </a>
+
+    <section class="tile recent lg:col-span-3 lg:row-span-2">
+      <div class="section-bar">
+        <h2><span class="section-icon"><Icon name="file-text" size={18} /></span>最近的笔记</h2>
+        <a href="/posts/" class="section-link">全部文章 <Icon name="arrow-up-right" size={15} /></a>
+      </div>
+      <div class="latest-list">
+        {posts.slice(0, 5).map((post) => <PostRow post={post} />)}
+        {!posts.length && <p class="empty-state">暂无已发布文章。</p>}
+      </div>
+    </section>
+
+    <section class="tile roadmap lg:row-span-2">
+      <div class="section-bar"><h2><span class="section-icon"><Icon name="milestone" size={18} /></span>课程与专题</h2></div>
+      <ul class="roadmap-list">
+        {topics.map(([topic, count]) => (
+          <li><a href={filterHref('series', topic)}><span class="topic-node"></span><span>{topic}</span><span class="topic-count mono">{count}</span></a></li>
+        ))}
+      </ul>
+      {!topics.length && <p class="empty-state">暂无专题。</p>}
+    </section>
+  </div>
+</Base>

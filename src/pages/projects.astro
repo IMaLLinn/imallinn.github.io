@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import ProjectVisual from '../components/ProjectVisual.astro';
+import { site } from '../config/site';
+import { postHref, publishedPosts, titleOf } from '../lib/posts';
+
+const projects = (await publishedPosts()).filter(({ data }) =>
+  data.featured || data.repoUrl || data.demoUrl || data.tags.some((tag) => site.projectTags.includes(tag.toLowerCase()))
+);
+---
+<Base title="项目">
+  <div class="inner-page">
+    <header class="page-heading"><span class="section-icon"><Icon name="box" /></span><h1>项目</h1><p>应用、小游戏与移动端开发实践。</p></header>
+    <div class="projects-grid">
+      {projects.map((post) => (
+        <article class="surface project-card">
+          <a class="project-link" href={postHref(post)}>
+            <ProjectVisual post={post} />
+            <div class="project-content">
+              <div class="tag-list">{post.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}</div>
+              <h2>{titleOf(post)} <Icon name="arrow-up-right" size={17} /></h2>
+              <p>{post.data.summary || post.data.description}</p>
+            </div>
+          </a>
+          {(post.data.repoUrl || post.data.demoUrl) && <div class="project-links">
+            {post.data.repoUrl && <a class="soft-button" href={post.data.repoUrl} target="_blank" rel="noopener"><Icon name="github" size={15} /> 源码</a>}
+            {post.data.demoUrl && <a class="soft-button" href={post.data.demoUrl} target="_blank" rel="noopener"><Icon name="arrow-up-right" size={15} /> 演示</a>}
+          </div>}
+        </article>
+      ))}
+    </div>
+    {!projects.length && <p class="empty-state">暂无已发布项目。</p>}
+  </div>
+</Base>

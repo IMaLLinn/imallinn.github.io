@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { dateOf, postHref, publishedPosts, titleOf, type Post } from '../lib/posts';
+
+const years = new Map<string, Post[]>();
+for (const post of await publishedPosts()) {
+  const year = dateOf(post).slice(0, 4);
+  const group = years.get(year) ?? [];
+  group.push(post);
+  years.set(year, group);
+}
+---
+<Base title="归档">
+  <div class="inner-page">
+    <header class="page-heading"><span class="section-icon"><Icon name="layers" /></span><h1>归档</h1><p>按发布时间浏览全部笔记。</p></header>
+    <div class="surface archive-panel">
+      {[...years].map(([year, posts]) => (
+        <section class="archive-year">
+          <h2 class="mono">{year} <span>{posts.length} 篇</span></h2>
+          <ul>{posts.map((post) => <li>
+            <a href={postHref(post)}><time class="mono" datetime={dateOf(post)}>{dateOf(post)}</time><span>{titleOf(post)}</span><Icon name="arrow-up-right" size={15} /></a>
+          </li>)}</ul>
+        </section>
+      ))}
+      {!years.size && <p class="empty-state">暂无已发布文章。</p>}
+    </div>
+  </div>
+</Base>

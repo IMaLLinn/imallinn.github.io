@@ -1,0 +1,78 @@
+---
+import type { Post } from '../lib/posts';
+import { titleOf } from '../lib/posts';
+
+const { post, priority = false } = Astro.props as { post: Post; priority?: boolean };
+const { cover, visualStyle, accent, tags } = post.data;
+const technologies = tags.join(' ').toLowerCase();
+const style = visualStyle ?? (
+  /游戏|pixel|game/.test(technologies) ? 'pixel' :
+  /计算器|chart|数据可视化/.test(technologies) ? 'chart' :
+  /linux|csapp|shell|系统/.test(technologies) ? 'terminal' :
+  accent === 'amber' ? 'terminal' :
+  accent === 'violet' ? 'chart' : 'grid'
+);
+const maze = [
+  '#########',
+  '##.....##',
+  '#...b...#',
+  '#.#...#.#',
+  '#..p..o.#',
+  '#.......#',
+  '##..o..##',
+  '#########',
+];
+---
+<div class:list={['project-visual', 'visual-' + style]} data-project-visual>
+  <div class="visual-fallback" hidden={Boolean(cover)} aria-hidden="true">
+    {style === 'pixel' && (
+      <div class="pixel-scene">
+        <div class="pixel-head"><span><i></i> {tags.find((tag) => /canvas|pixel|游戏/i.test(tag)) ?? 'PIXEL'}</span><span>LV. 01</span></div>
+        <svg class="pixel-board" viewBox="0 0 144 128" shape-rendering="crispEdges" aria-hidden="true">
+          {maze.flatMap((row, y) => [...row].map((tile, x) => (
+            <g transform={`translate(${x * 16} ${y * 16})`}>
+              {tile === '#' ? (
+                <><rect x="1" y="1" width="14" height="14" fill="#303034"/><path d="M1 1h14v2H3v12H1z" fill="#424247"/><path d="M3 13h12v2H3z" fill="#202023"/><path d="M5 6h6v1H5z" fill="#38383d"/></>
+              ) : (
+                <><rect x="1" y="1" width="14" height="14" fill={(x + y) % 2 ? '#1b1b1e' : '#222226'}/><path d="M3 3h1v1H3z" fill="#35353a"/></>
+              )}
+              {tile === 'o' && <path d="M5 5h6v6H5z M7 7v2h2V7z" fill="#a1a1aa" fill-rule="evenodd" opacity=".7"/>}
+              {tile === 'b' && <><rect x="2" y="2" width="12" height="12" fill="#d68f5f"/><path d="M2 2h12v2H4v10H2z" fill="#f8c894"/><path d="m5 5 6 6m0-6-6 6" stroke="#71452e" stroke-width="2"/></>}
+              {tile === 'p' && <><path d="M3 2h2v3h6V2h2v4h1v6h-2v2H4v-2H2V6h1z" fill="#fafafa"/><path d="M4 11h8v2H4z" fill="#d4d4d8"/><path d="M4 8h2v2H4zm6 0h2v2h-2z" fill="#27272a"/></>}
+            </g>
+          )))}
+        </svg>
+        <div class="pixel-foot"><span>●</span><span>● ● <b>●</b></span></div>
+      </div>
+    )}
+    {style === 'chart' && (
+      <div class="mini-window chart-window">
+        <div class="mini-title"><span><i></i><i></i><i></i></span><b>ƒ(x)</b></div>
+        <svg viewBox="0 0 210 76" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 15h210M0 30h210M0 45h210M0 60h210M21 0v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76m21-76v76" stroke="currentColor" opacity=".15" fill="none"/>
+          <path d="M0 45h210M105 0v76" stroke="currentColor" opacity=".38" fill="none"/>
+          <path d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49v63H0Z" fill="var(--accent)" opacity=".07"/>
+          <path d="M0 48C30 50 37 9 61 17s38 54 66 45 40-52 83-49" stroke="var(--accent)" stroke-width="2" fill="none"/>
+          <circle cx="105" cy="54" r="3" fill="var(--accent)"/>
+        </svg>
+        <div class="mini-keys">{['sin', 'cos', 'tan', 'π', '√', '='].map((key) => <span>{key}</span>)}</div>
+      </div>
+    )}
+    {style === 'terminal' && (
+      <div class="mini-window terminal-window">
+        <div class="mini-title"><span><i></i><i></i><i></i></span><b>~</b></div>
+        <div class="terminal-lines"><span>$ <b>./run</b></span><span><i></i><i></i></span><span><i></i><i></i><i></i></span><span>$ <b>▍</b></span></div>
+      </div>
+    )}
+    {style === 'grid' && (
+      <svg class="node-diagram" viewBox="0 0 240 108" aria-hidden="true">
+        <path d="M22 26h53l45 56h98m-196 0h53l45-56h98M75 26v56m45-56v56m50-56v56" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        {[22, 75, 120, 170, 218].map((x) => [26, 82].map((y) => (
+          <circle cx={x} cy={y} r={x === 120 ? 5 : 3} fill="currentColor" opacity={x === 120 ? 1 : .48}/>
+        )))}
+        <rect x="104" y="38" width="32" height="32" rx="6" stroke="currentColor" stroke-opacity=".6" fill="none"/>
+      </svg>
+    )}
+  </div>
+  {cover && <img src={cover} alt={titleOf(post) + '截图'} loading={priority ? 'eager' : 'lazy'} decoding="async" />}
+</div>

@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../config/site';
+---
+<Base title="关于">
+  <div class="inner-page">
+    <section class="surface about-panel">
+      <div class="about-person"><img src={site.avatar} width="68" height="68" alt="" /><div><h1>{site.name}</h1><p>{site.status}</p></div></div>
+      <p class="about-description">{site.about}</p>
+      <h2 class="tile-label"><Icon name="grid" size={17} /> Tech Stack</h2>
+      <ul class="stack-list">{site.stack.map(({ label, icon }) => <li><Icon name={icon} size={17} />{label}</li>)}</ul>
+      <div class="hero-actions">
+        <a class="soft-button" href={site.github} target="_blank" rel="noopener"><Icon name="github" size={15} /> GitHub <Icon name="arrow-up-right" size={13} /></a>
+        <a class="soft-button" href={site.rss}><Icon name="rss" size={15} /> RSS</a>
+      </div>
+    </section>
+  </div>
+</Base>

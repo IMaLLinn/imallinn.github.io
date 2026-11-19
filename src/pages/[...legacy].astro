@@ -1,0 +1,22 @@
+---
+import LegacyRedirect from '../components/LegacyRedirect.astro';
+import { filterHref, legacyTaxonomies, legacyTerms, publishedPosts } from '../lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await publishedPosts();
+  const paths = new Map<string, string>([
+    ['page/1', '/'], ['page/2', '/posts/'], ['posts/page/1', '/posts/'],
+    ['archives/page/1', '/archives/'], ['offline', '/'],
+  ]);
+  for (const [name, filter] of Object.entries(legacyTaxonomies)) {
+    paths.set(name, '/posts/');
+    for (const [slug, term] of legacyTerms(posts, filter)) {
+      const to = filterHref(filter, term);
+      paths.set(name + '/' + slug, to);
+      paths.set(name + '/' + slug + '/page/1', to);
+    }
+  }
+  return [...paths].map(([legacy, to]) => ({ params: { legacy }, props: { to } }));
+}
+---
+<LegacyRedirect to={Astro.props.to} />

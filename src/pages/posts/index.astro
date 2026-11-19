@@ -1,0 +1,86 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import PostRow from '../../components/PostRow.astro';
+import { filters, filterValues, postHref, publishedPosts, type Filter } from '../../lib/posts';
+
+const posts = await publishedPosts();
+const labels: Record<Filter, string> = { series: '专题', category: '分类', tag: '标签' };
+const values = (filter: Filter) => [...new Set(posts.flatMap((post) => filterValues(post, filter)))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+---
+<Base title="文章">
+  <div class="inner-page" data-post-list>
+    <header class="page-heading"><span class="section-icon"><Icon name="file-text" /></span><h1>文章</h1><p>技术笔记、课程实验与项目记录。</p></header>
+    <section class="surface filter-panel" aria-label="文章筛选">
+      {filters.map((filter) => (
+        <div class="facet">
+          <span id={'label-' + filter}>{labels[filter]}</span>
+          <div class="facet-options" role="group" aria-labelledby={'label-' + filter}>
+            <button type="button" class="tag" data-filter={filter} data-value="" aria-pressed="true">全部</button>
+            {values(filter).map((value) => <button type="button" class="tag" data-filter={filter} data-value={value} aria-pressed="false">{value}</button>)}
+          </div>
+        </div>
+      ))}
+    </section>
+    <section class="surface list-panel" aria-label="文章列表">
+      <div class="list-meta" data-filter-status aria-live="polite">共 {posts.length} 篇文章</div>
+      <ul>{posts.map((post) => <li data-post-url={postHref(post)}><PostRow post={post} /></li>)}</ul>
+    </section>
+  </div>
+  <script>
+    import { loadSearchPosts } from '../../scripts/search';
+    import type { SearchPost } from '../../lib/search';
+
+    const keys = ['series', 'category', 'tag'] as const;
+    const field = { series: 'series', category: 'categories', tag: 'tags' } as const;
+    document.addEventListener('astro:page-load', () => {
+      const page = document.querySelector<HTMLElement>('[data-post-list]');
+      if (!page) return;
+      const controls = [...page.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+      const rows = [...page.querySelectorAll<HTMLElement>('[data-post-url]')];
+      const status = page.querySelector<HTMLElement>('[data-filter-status]')!;
+      let revision = 0;
+
+      async function apply() {
+        const ticket = ++revision;
+        const query = new URLSearchParams(location.search);
+        for (const control of controls) {
+          control.setAttribute('aria-pressed', String((query.get(control.dataset.filter!) ?? '') === control.dataset.value));
+        }
+        if (!keys.some((key) => query.get(key))) {
+          rows.forEach((row) => { row.hidden = false; });
+          status.textContent = `共 ${rows.length} 篇文章`;
+          return;
+        }
+        try {
+          const entries = await loadSearchPosts();
+          if (ticket !== revision || !page?.isConnected) return;
+          const postMatches = (post: SearchPost) => keys.every((key) => {
+            const expected = query.get(key);
+            const values = post[field[key]];
+            return !expected || (Array.isArray(values) ? values.includes(expected) : values === expected);
+          });
+          const matches = new Set(entries.filter(postMatches).map(({ url }) => url));
+          rows.forEach((row) => { row.hidden = !matches.has(row.dataset.postUrl!); });
+          status.textContent = matches.size ? `共 ${matches.size} 篇文章` : '没有符合条件的文章。';
+        } catch {
+          if (ticket !== revision) return;
+          rows.forEach((row) => { row.hidden = false; });
+          status.textContent = '筛选索引加载失败，当前显示全部文章。';
+        }
+      }
+
+      for (const control of controls) {
+        control.addEventListener('click', () => {
+          const next = new URL(location.href);
+          const { filter, value } = control.dataset;
+          if (value) next.searchParams.set(filter!, value);
+          else next.searchParams.delete(filter!);
+          history.replaceState(history.state, '', next);
+          void apply();
+        });
+      }
+      void apply();
+    });
+  </script>
+</Base>

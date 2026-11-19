@@ -1,0 +1,37 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../config/site';
+
+const actions = [
+  { action: 'theme', label: '切换主题', icon: 'moon' },
+  { action: 'github', label: '打开 GitHub', icon: 'github' },
+  { action: 'rss', label: '复制 RSS 链接', icon: 'rss' },
+];
+---
+<dialog class="command" data-command aria-label="全局命令面板" data-github={site.github} data-rss={site.rss}>
+  <div class="command-surface">
+    <div class="command-input">
+      <Icon name="search" size={21} />
+      <input type="search" placeholder="搜索文章，或输入命令…" aria-label="搜索文章与命令" aria-controls="command-results command-actions" autocomplete="off" autofocus />
+      <button type="button" data-command-close aria-label="关闭命令面板"><kbd class="mono">Esc</kbd></button>
+    </div>
+    <div class="command-scroll">
+      <section id="command-results" data-search-group hidden>
+        <h2>文章</h2>
+        <div data-search-results></div>
+        <p data-search-status class="search-status" role="status"></p>
+      </section>
+      <div id="command-actions" data-command-actions>
+        <section data-command-group>
+          <h2>快捷导航</h2>
+          {site.nav.map(({ href, label, icon }) => <a class="command-item" href={href} data-command-item><Icon name={icon} size={17} /><span>{label}</span><Icon name="chevron-right" size={15} /></a>)}
+        </section>
+        <section data-command-group>
+          <h2>快捷动作</h2>
+          {actions.map(({ action, label, icon }) => <button type="button" class="command-item" data-command-item data-command-action={action}><Icon name={icon} size={17} /><span>{label}</span></button>)}
+        </section>
+      </div>
+    </div>
+    <div class="command-footer mono"><span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>↵</kbd> 打开</span><span><kbd>Esc</kbd> 关闭</span></div>
+  </div>
+</dialog>

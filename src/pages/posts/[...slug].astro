@@ -1,0 +1,81 @@
+---
+import { render } from 'astro:content';
+import 'katex/dist/katex.min.css';
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import LegacyRedirect from '../../components/LegacyRedirect.astro';
+import { dateOf, filterHref, postHref, publishedPosts, readingMinutes, slugOf, titleOf, type Post } from '../../lib/posts';
+
+type RouteProps = { post: Post; posts: Post[]; to?: never } | { to: string; post?: never; posts?: never };
+
+export async function getStaticPaths() {
+  const posts = await publishedPosts();
+  const paths = new Map<string, RouteProps>(posts.map((post) => [slugOf(post), { post, posts }]));
+  for (const post of posts) {
+    for (const alias of post.data.aliases) {
+      const slug = alias.replace(/^\/posts\//, '').replace(/\/$/, '');
+      if (!paths.has(slug)) paths.set(slug, { to: postHref(post) });
+    }
+  }
+  return [...paths].map(([slug, props]) => ({ params: { slug }, props }));
+}
+
+const { post, posts, to } = Astro.props as RouteProps;
+const rendered = post ? await render(post) : undefined;
+const Content = rendered?.Content;
+const headings = rendered?.headings.filter(({ depth }) => depth <= 3) ?? [];
+const position = post && posts ? posts.findIndex((entry) => entry.id === post.id) : -1;
+const newer = posts?.[position - 1];
+const older = posts?.[position + 1];
+const series = post?.data.series
+  ? posts?.filter(({ data }) => data.series === post.data.series).sort((a, b) =>
+    (a.data.seriesOrder ?? Infinity) - (b.data.seriesOrder ?? Infinity) || +a.data.pubDate - +b.data.pubDate)
+  : undefined;
+---
+{to && <LegacyRedirect to={to} />}
+{post && Content && (
+  <Base title={post.data.title} description={post.data.description} type="article">
+    <article class="article-page">
+      <header class="article-heading">
+        <a class="back-link" href="/posts/"><Icon name="chevron-right" size={15} /> 全部文章</a>
+        <div class="article-date"><time class="mono" datetime={dateOf(post)}>{dateOf(post)}</time><span>·</span><span>约 {readingMinutes(post)} 分钟</span></div>
+        <h1>{post.data.title}</h1>
+        <p>{post.data.description}</p>
+        <div class="tag-list">
+          {post.data.categories.map((category) => <a class="tag article-category" href={filterHref('category', category)}>{category}</a>)}
+          {post.data.tags.map((tag) => <a class="tag" href={filterHref('tag', tag)}>#{tag}</a>)}
+        </div>
+      </header>
+
+      <div class="reading-layout">
+        <div class="reading-column">
+          {series && post.data.series && (
+            <details class="surface series-panel">
+              <summary><span><Icon name="layers" size={18} /> {post.data.series} <small>{series.length} 篇</small></span><Icon name="chevron-down" size={17} /></summary>
+              <ol>{series.map((entry) => <li><a href={postHref(entry)} aria-current={entry.id === post.id ? 'page' : undefined}>{titleOf(entry)}</a></li>)}</ol>
+            </details>
+          )}
+          <div class="prose max-w-none article-prose" data-article-body><Content /></div>
+          <nav class="article-pager" aria-label="上一篇和下一篇">
+            {newer && <a class="surface" href={postHref(newer)}><small>上一篇</small><span>{titleOf(newer)}</span></a>}
+            {older && <a class="surface" href={postHref(older)}><small>下一篇</small><span>{titleOf(older)}</span></a>}
+          </nav>
+        </div>
+        {headings.length > 0 && (
+          <aside class="toc">
+            <nav aria-label="本页目录" data-toc>
+              <h2><Icon name="file-text" size={16} /> 本页目录</h2>
+              <ol>{headings.map(({ depth, text, slug }) => <li class={'toc-depth-' + depth}><a href={'#' + encodeURIComponent(slug)} data-heading={slug}>{text}</a></li>)}</ol>
+            </nav>
+          </aside>
+        )}
+      </div>
+      <dialog class="lightbox" data-lightbox aria-label="文章图片预览">
+        <div><button type="button" data-lightbox-close aria-label="关闭图片预览"><Icon name="x" size={24} /></button><img alt="" /><p data-image-caption></p></div>
+      </dialog>
+    </article>
+  </Base>
+)}
+<script>
+  import '../../scripts/article';
+</script>
