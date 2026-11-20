@@ -248,6 +248,16 @@ document.addEventListener('astro:page-load', () => {
   const nav = document.querySelector<HTMLElement>('.nav-pill');
   if (nav) setupNavigation(nav, signal);
 
+  const contact = document.querySelector<HTMLButtonElement>('[data-copy-contact]');
+  contact?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(contact.dataset.copyContact!);
+      toast('已复制 GitHub 地址');
+    } catch {
+      toast('复制失败，请打开 GitHub 获取地址');
+    }
+  }, { signal });
+
   for (const key of document.querySelectorAll('[data-modifier]')) key.textContent = modifier;
 
   for (const tile of document.querySelectorAll<HTMLElement>('.bento .tile')) {

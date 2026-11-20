@@ -1,5 +1,7 @@
 let pageListeners: AbortController | undefined;
 
+document.addEventListener('astro:before-swap', () => pageListeners?.abort());
+
 document.addEventListener('astro:page-load', () => {
   pageListeners?.abort();
   const body = document.querySelector<HTMLElement>('[data-article-body]');
@@ -19,7 +21,6 @@ document.addEventListener('astro:page-load', () => {
     const copy = document.createElement('button');
     copy.type = 'button';
     copy.textContent = '复制';
-    copy.setAttribute('aria-label', '复制代码');
     copy.setAttribute('aria-live', 'polite');
     let timer: number | undefined;
     copy.addEventListener('click', async () => {
@@ -88,14 +89,30 @@ document.addEventListener('astro:page-load', () => {
   let active = -1;
   function syncToc() {
     scheduled = false;
+    if (signal.aborted) return;
     let next = 0;
     for (let index = 0; index < sections.length; index++) {
       const heading = sections[index];
       if (heading && heading.getBoundingClientRect().top <= 133) next = index;
     }
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+      // The last headings may never reach the top when the page runs out of room to scroll.
+      const requested = links.findIndex((link) => link.hash === location.hash);
+      const top = sections[requested]?.getBoundingClientRect().top;
+      if (top !== undefined && top >= 0 && top < window.innerHeight) next = requested;
+      else if (window.scrollY > 0) next = links.length - 1;
+    }
     if (active === next) return;
     links[active]?.removeAttribute('aria-current');
-    links[next]?.setAttribute('aria-current', 'location');
+    const link = links[next];
+    link.setAttribute('aria-current', 'location');
+    const list = link.closest('ol');
+    if (list) {
+      const bounds = list.getBoundingClientRect();
+      const item = link.getBoundingClientRect();
+      if (item.top < bounds.top) list.scrollTop += item.top - bounds.top;
+      else if (item.bottom > bounds.bottom) list.scrollTop += item.bottom - bounds.bottom;
+    }
     active = next;
   }
   function scheduleToc() {
@@ -105,6 +122,9 @@ document.addEventListener('astro:page-load', () => {
     }
   }
   window.addEventListener('scroll', scheduleToc, { signal, passive: true });
+  window.addEventListener('hashchange', scheduleToc, { signal });
+  window.addEventListener('popstate', scheduleToc, { signal });
   window.addEventListener('resize', scheduleToc, { signal });
+  body.addEventListener('load', scheduleToc, { signal, capture: true });
   syncToc();
 });

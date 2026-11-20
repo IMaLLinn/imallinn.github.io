@@ -9,8 +9,10 @@ export const postTopic = (post: Post) => post.data.series || post.data.categorie
 export const filters = ['series', 'category', 'tag'] as const;
 export type Filter = typeof filters[number];
 
-export function filterHref(filter: Filter, value: string) {
-  return '/posts/?' + new URLSearchParams({ [filter]: value });
+export function filterHref(filter: Filter, value: string, includeArchived = false) {
+  const query = new URLSearchParams({ [filter]: value });
+  if (includeArchived) query.set('archived', '1');
+  return '/posts/?' + query;
 }
 
 export function filterValues(post: Post, filter: Filter) {

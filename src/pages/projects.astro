@@ -11,14 +11,14 @@ const projects = (await publishedPosts()).filter(({ data }) =>
 ---
 <Base title="项目">
   <div class="inner-page">
-    <header class="page-heading"><span class="section-icon"><Icon name="box" /></span><h1>项目</h1><p>应用、小游戏与移动端开发实践。</p></header>
+    <header class="page-heading"><span class="section-icon"><Icon name="box" /></span><h1>项目</h1><p>大模型评测、RAG 与工程实践。</p></header>
     <div class="projects-grid">
       {projects.map((post) => (
         <article class="surface project-card">
           <a class="project-link" href={postHref(post)}>
             <ProjectVisual post={post} />
             <div class="project-content">
-              <div class="tag-list">{post.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}</div>
+              <div class="tag-list">{post.data.tags.filter((tag) => !site.projectTags.includes(tag.toLowerCase())).slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}</div>
               <h2>{titleOf(post)} <Icon name="arrow-up-right" size={17} /></h2>
               <p>{post.data.summary || post.data.description}</p>
             </div>

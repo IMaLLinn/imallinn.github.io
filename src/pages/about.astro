@@ -10,10 +10,30 @@ import { site } from '../config/site';
       <p class="about-description">{site.about}</p>
       <h2 class="tile-label"><Icon name="grid" size={17} /> Tech Stack</h2>
       <ul class="stack-list">{site.stack.map(({ label, icon }) => <li><Icon name={icon} size={17} />{label}</li>)}</ul>
-      <div class="hero-actions">
-        <a class="soft-button" href={site.github} target="_blank" rel="noopener"><Icon name="github" size={15} /> GitHub <Icon name="arrow-up-right" size={13} /></a>
-        <a class="soft-button" href={site.rss}><Icon name="rss" size={15} /> RSS</a>
-      </div>
     </section>
+    <div class="about-grid">
+      <section class="surface about-card">
+        <h2 class="tile-label"><Icon name="milestone" size={17} /> 当前在推进</h2>
+        <ul class="about-projects">
+          <li>
+            <a href="/posts/llm-eval-lab/">LLM-Eval-Lab <Icon name="arrow-up-right" size={14} /></a>
+            <p>第一周已跑通批量调用和成本核算，下一步是自动评分和人工校准。</p>
+          </li>
+          <li>
+            <a href="/posts/gitlab-handbook-rag/">GitLab Handbook RAG <Icon name="arrow-up-right" size={14} /></a>
+            <p>正在规划语料范围和问答评测集。</p>
+          </li>
+        </ul>
+      </section>
+      <section class="surface about-card">
+        <h2 class="tile-label"><Icon name="file-code" size={17} /> 关于这个站</h2>
+        <p>用 Astro 和 Tailwind CSS 搭建，发布在 GitHub Pages。这里记做过的项目、踩过的坑，以及以后能查回来的细节。</p>
+        <div class="hero-actions">
+          <a class="soft-button" href={site.github} target="_blank" rel="noopener"><Icon name="github" size={15} /> GitHub <Icon name="arrow-up-right" size={13} /></a>
+          <button class="soft-button" type="button" data-copy-contact={site.github}>复制 GitHub 地址</button>
+          <a class="soft-button" href={site.rss}><Icon name="rss" size={15} /> RSS</a>
+        </div>
+      </section>
+    </div>
   </div>
 </Base>

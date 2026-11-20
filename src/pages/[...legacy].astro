@@ -1,6 +1,6 @@
 ---
 import LegacyRedirect from '../components/LegacyRedirect.astro';
-import { filterHref, legacyTaxonomies, legacyTerms, publishedPosts } from '../lib/posts';
+import { filterHref, filterValues, legacyTaxonomies, legacyTerms, publishedPosts } from '../lib/posts';
 
 export async function getStaticPaths() {
   const posts = await publishedPosts();
@@ -11,7 +11,8 @@ export async function getStaticPaths() {
   for (const [name, filter] of Object.entries(legacyTaxonomies)) {
     paths.set(name, '/posts/');
     for (const [slug, term] of legacyTerms(posts, filter)) {
-      const to = filterHref(filter, term);
+      const archivedOnly = !posts.some((post) => !post.data.archived && filterValues(post, filter).includes(term));
+      const to = filterHref(filter, term, archivedOnly);
       paths.set(name + '/' + slug, to);
       paths.set(name + '/' + slug + '/page/1', to);
     }

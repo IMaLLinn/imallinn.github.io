@@ -34,16 +34,17 @@ const series = post?.data.series
 ---
 {to && <LegacyRedirect to={to} />}
 {post && Content && (
-  <Base title={post.data.title} description={post.data.description} type="article">
+  <Base title={titleOf(post)} description={post.data.description} type="article">
     <article class="article-page">
       <header class="article-heading">
         <a class="back-link" href="/posts/"><Icon name="chevron-right" size={15} /> 全部文章</a>
         <div class="article-date"><time class="mono" datetime={dateOf(post)}>{dateOf(post)}</time><span>·</span><span>约 {readingMinutes(post)} 分钟</span></div>
-        <h1>{post.data.title}</h1>
+        <h1>{titleOf(post)}</h1>
+        {post.data.archived && <p class="article-archive-note">写于早期学习阶段，仅作存档记录。</p>}
         <p>{post.data.description}</p>
         <div class="tag-list">
-          {post.data.categories.map((category) => <a class="tag article-category" href={filterHref('category', category)}>{category}</a>)}
-          {post.data.tags.map((tag) => <a class="tag" href={filterHref('tag', tag)}>#{tag}</a>)}
+          {post.data.categories.map((category) => <a class="tag article-category" href={filterHref('category', category, post.data.archived)}>{category}</a>)}
+          {post.data.tags.map((tag) => <a class="tag" href={filterHref('tag', tag, post.data.archived)}>#{tag}</a>)}
         </div>
       </header>
 

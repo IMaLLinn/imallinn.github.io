@@ -1,5 +1,6 @@
 ---
 title: "2026夏移动软件开发实验一"
+displayTitle: "微信小程序起步 · 页面结构与基础交互"
 pubDate: 2026-08-24T14:45:00+08:00
 slug: 2026-summer-mobile-development-experiment-1
 draft: false
