@@ -9,7 +9,7 @@ export const site = {
   githubUser,
   github: 'https://github.com/' + githubUser,
   rss: '/index.xml',
-  avatar: '/apple-touch-icon.png',
+  avatar: '/avatar.png',
   defaultTheme: 'light' as 'light' | 'dark',
   status: 'Building LLM Evaluation Systems',
   headline: ["Jude's", 'Workspace.'],
