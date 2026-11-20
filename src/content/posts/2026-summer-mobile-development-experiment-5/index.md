@@ -15,18 +15,18 @@ visualStyle: "chart"
 accent: "violet"
 ---
 
-我用 ArkTS 和 ArkUI 做了一台鸿蒙科学计算器，可以逐键计算，也能输入函数看图像。这里有两个容易混的地方，屏幕上的答案有显示精度，图像上的两点也未必能用直线连起来。
+我用 ArkTS 和 ArkUI 做了一个鸿蒙计算器，先把按键、四则运算和连续计算跑通，再接科学函数、Canvas 绘图和历史回填。画图用的是另一套表达式解释规则，两个入口最容易在「下一步到底怎么求值」这件事上混起来。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/basic-calculation.png" width="280" alt="基础计算界面与 12 + 8 的计算结果">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/graph-reciprocal.png" width="280" alt="函数 y = 1/x 在零点两侧分段绘制">
 </div>
 
-## 显示值和计算值分开
+## 先跑通按键，再把显示精度拆出去
 
-`Calculator` 管输入和运算，页面取结果交给 `formatAnswer()`，按 Auto、Decimal 或 Scientific 显示。设置两位小数后，`1 ÷ 3` 显示 `0.33`，内部仍保留原数值，接着乘 3 得到 `1.00`。直接拿显示字符串续算就会得到 `0.99`。基础和科学键盘各自保存输入状态，两者的逐键运算也和绘图解析器的表达式优先级分开。
+ArkUI 每收到一个按键，就交给当前的 `Calculator` 更新数值、左操作数和运算符，再把结果交给 `formatAnswer()` 显示。键盘逐键求值，输入 `2 + 3 × 4` 时，按下乘号就先算完 `2 + 3`，所以得到 20。
 
-逐键输入 `2 + 3 × 4` 得到 20，因为按下下一个运算符时已经算出了前一段的结果。图像输入框里的 `2+3*4` 按表达式优先级求值，结果是 14。科学键盘能切 DEG 和 RAD，绘图里的三角函数固定用弧度。
+如果直接取显示值续算，`1 ÷ 3` 显示为 `0.33` 后再乘 3，只能得 `0.99`。我把内部 `value` 和显示字符串分开。测试里把格式设为两位小数，`1 ÷ 3` 仍显示 `0.33`，接着乘 3 得到 `1.00`。另一个检查是输入 `8 ÷ 0` 后接着算 `7 + 2`，页面先显示错误，下一次输入清除错误后得到 9。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/scientific-sin.png" width="280" alt="DEG 模式下，sin(30°) 的结果为 0.5">
@@ -34,11 +34,11 @@ accent: "violet"
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/calculation-error.png" width="280" alt="计算异常时显示“错误”">
 </div>
 
-## 有采样点不代表能连线
+## 函数能解析，线也可能要断开
 
-`GraphExpression.ets` 用递归下降处理加减、乘除、正负号、乘方和括号，没有调用 `eval()`。乘方右侧继续解析，所以 `2^3^2` 得到 `512`。语法合法性和点值也分别保存，`sqrt(x)` 在负半轴算不出实数时，只跳过那些点。像 `2x` 这种当前语法不接受的写法，才会报表达式无效。
+函数图像接收完整表达式，`GraphExpression.ets` 用递归下降按优先级求值，所以 `2+3*4` 得到 14，`2^3^2` 按右结合算出 512。语法状态和采样值也得分开。比如 `sqrt(x)` 在负半轴没有实数值，只跳过这些点。写成解析器不支持的 `2x` 才会提示表达式无效。
 
-绘图在 `−10` 到 `10` 之间取 601 个采样点。只看两个端点，会把 `1/x` 在间断两侧画成一条穿过画布的线。我在求值时记录分母或正切里的余弦值，再检查两点及中点的数值和符号变化。测试里也放了 `0.001/(x-0.015)`，间断落在采样点之间，仍然要断开。绘图端只根据 `connect` 选择 `lineTo()` 或 `moveTo()`，纵坐标映射时再翻转方向。
+绘图在 `−10` 到 `10` 之间取 601 个点。若把相邻的可见点直接连起来，间断落在两点之间时，Canvas 就会画出一条横跨两支曲线的线。我在求值时记下除法的分母和正切里的余弦值，用端点和中点检查途中有没有过零，再决定用 `lineTo()` 还是 `moveTo()`。
 
 ```ts
 // 采样当前点，并判断它是否能接上前一个点。
@@ -59,16 +59,16 @@ if (point.connect) { ctx.lineTo(px, py); }
 else { ctx.moveTo(px, py); }
 ```
 
-目前横纵范围固定，也没有拖动和缩放。采样的中点检查只能覆盖被取到的坐标，函数变化更快时仍可能漏掉间断。
+测试专门放了 `0.001/(x-0.015)`，间断不在采样点上，该处仍能断开。运行截图里的 `1/x` 也是分成两支。当前坐标范围和步长固定，暂时没有拖动、缩放。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/graph-quadratic.png" width="280" alt="函数 y = x² − 2x + 1 的图像">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/dark-theme.png" width="280" alt="深色主题下的基础计算界面">
 </div>
 
-## 历史保存的是等号之前的状态
+## 历史记录可以接着算
 
-只保存答案 `20`，没法回填 `12 + 8` 后退格修改。我在按等号时保留计算前的快照，恢复时复制分组数组。把回填算式里的 8 改成 9 后能算出 21，再次打开原记录仍可得到 20。基础与科学模式各留最近 10 条，退出应用进程后清空。外观、角度和精度等设置单独放到 Preferences，下次打开还能读回来。
+只有答案 `20` 时，没法知道当时输入的是 `12 + 8`。按等号前我存了一份操作数、运算符和分组状态，回填时再复制分组数组。测试里召回 `12 + 8` 改右边为 9，结果是 21，再点原记录仍能算出 20。历史记录随进程退出清空，外观、角度和精度单独用 Preferences 保存。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/history.png" width="280" alt="历史列表中的基础计算与科学计算记录">

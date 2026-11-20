@@ -14,16 +14,16 @@ comment: true
 seriesOrder: 1
 ---
 
-我拿微信开发者工具生成的首页做了个小练习，放一段文字、一张本地图片和一个按钮。标题默认是 `HELLO girl`，点一下变成 `HELLO boy`，再点就切回来。
+第一次写微信小程序，我想弄清点一次按钮怎么改掉导航栏的标题。我从开发者工具的默认首页改起，在 `pages/index` 放了一行文字、一个按钮和一张本地猫图。
 
-## 一次点击只更新一次
+## 从按钮点到标题变
 
-`pages/index` 下的 WXML 管结构，WXSS 管样式，JS 放数据和事件，JSON 留给页面配置。标题绑定 `HELLO {{wording}}`，按钮用 `bind:tap="onClick"`。我原本以为来回切换要写循环，实际每次点击都会调用一次 `onClick`。处理函数只要根据当前值选出另一个值，再用 `setData()` 更新 `wording`，标题就会跟着变。
+`index.wxml` 里把标题写成 `HELLO {{wording}}`，按钮用 `bind:tap="onClick"` 绑定到 `index.js`。我起初以为来回切换要写个 `while`。实际每点一次，框架就会调用一次 `onClick`。函数只需要从当前值算出另一个值，调一次 `setData()`，绑定的标题就会刷新。
 
-改动只涉及标题绑定的数据，正文、按钮和图片都留在原位。
+## 文件有了，为什么首屏看不见
 
-## 图片被挤到了首屏外
+按钮能用，图片却没出现在模拟器里。我先核对 `../../img/OIP.jpg`，文件和相对路径都对。顺着 WXML 查元素的位置，发现 `<image>` 写在 `.container` 后面，而 `app.wxss` 里的容器占满了首屏高度。把图片移进容器后，文字、按钮和图片一起走原来的纵向 Flex 布局。
 
-本地的 `../../img/OIP.jpg` 路径核对过，图片还是没出现。查到 `app.wxss` 才看到 `.container` 占了整屏高度，放在它后面的 `<image>` 自然落到了屏幕下方。我把图片挪进容器，沿用全局的纵向 Flex 布局，再在页面 WXSS 里调文字样式。
+最后在模拟器里打开首页，能看到文字、按钮和猫图。连点两次，标题从 `HELLO girl` 变成 `HELLO boy`，再回到 `HELLO girl`，其余内容都在原位。
 
 ![首页的 WXSS 设置](/posts/2026-summer-mobile-development-experiment-1/2026-08-24-14-36-47.png)

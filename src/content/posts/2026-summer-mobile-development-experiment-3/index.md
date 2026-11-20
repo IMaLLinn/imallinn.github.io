@@ -15,32 +15,35 @@ cover: "/posts/2026-summer-mobile-development-experiment-3/image.png"
 accent: "blue"
 ---
 
-我用原生微信小程序做了 OUC NEWS，首页有海大新闻轮播、分类和搜索，详情页可以收藏和分享。新闻来自本地 `common.js`，这篇主要记筛选状态怎么组织，以及图片把真机调试包撑爆后怎么处理。
+前两次练习都在一个页面里。这次我用原生微信小程序做了 OUC NEWS，想把海大新闻从首页点进详情，再把读过和收藏过的文章找回来。起点是本地的八条新闻，列表和详情都读 `utils/common.js`。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-3/image.png" width="300" alt="OUC NEWS 首页默认界面">
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-2.png" width="300" alt="Featured 轮播新闻">
 </div>
 
-## 用一份新闻数据跑通列表和详情
+## 先让一条新闻从首页走到详情
 
-`newsList` 保留原始数据，`filteredNewsList` 只放当前要展示的结果。切分类和输关键词都走 `applyFilters()`，先缩小到当前分类，再匹配标题和正文。这样清除关键词或切回「全部」时，可以直接从原数组恢复。首页列表、轮播和收藏入口都用新闻 ID 打开详情，详情页从 `options.id` 查记录。分享路径也带同一个 ID，接收方进的是具体新闻。
+首页调用 `getNewsList()` 时遇到过 `is not a function`。我先按调用文件的位置核对了 `../../utils/common.js`，再打印 `require` 返回的对象，最后找到一处少写了 s 的 `getNewList`。列表能读到以后，轮播和新闻卡片都传新闻 ID，详情页拿 `options.id` 调 `getNewsDetail()`。点分享时，卡片路径也带这个 ID，同一页就能打开对应文章。
 
-导入 `common.js` 时，我顺着报错查过相对路径，最后发现调用名少了一个 s。打印 `require` 返回的对象，核对 `module.exports`，比反复改 `../` 直接。另一个误导是首页显示「请使用 2.10.4 及以上版本基础库」。开发者工具已经在 3.17.x，文字来自遗留的 WXML 默认分支，换掉模板后提示消失。
+在同一个列表上再加分类和搜索时，我保留原始的 `newsList`，把计算结果写到 `filteredNewsList`。两个入口都调用 `applyFilters()`，先按分类缩小范围，再匹配标题或正文。清空关键词只去掉搜索条件，当前分类还在。开发者工具里，「全部」能看到八条，输入 `2026` 后的截图有四条匹配。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-1.png" width="300" alt="首页关键词搜索结果">
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-3.png" width="300" alt="新闻详情阅读页">
-<img src="/posts/2026-summer-mobile-development-experiment-3/image-4.png" width="300" alt="原生分享面板">
-<img src="/posts/2026-summer-mobile-development-experiment-3/image-6.png" width="300" alt="个人中心最近浏览列表">
 </div>
 
-## 收藏与浏览记录共用 Storage
+## 加了最近浏览，收藏也要一起改
 
-收藏按 `news_` 加新闻 ID 存储，最近浏览则放在 `news_history` 里。每次打开详情，先移除历史里同 ID 的旧项，再把当前项放到第一条，最多留五条。按 A、B、C、A 浏览，列表会变成 A、C、B。「我的」在 `onShow` 重新读两种记录，返回时能看到详情页刚做的改动。这里容易漏一个条件，枚举收藏时得排除 `news_history`，它也以 `news_` 开头。
+收藏先按 `news_ + id` 存，每条新闻一个键，「我的」页扫这个前缀来取收藏。后来加最近浏览时，我用了单独的 `news_history` 数组，进详情就去掉旧的同 ID 项，把当前项挪到最前，最多保留五条。这就撞上了原来的前缀规则，枚举收藏时得显式跳过 `news_history`，否则会把数组当成一条收藏。比如依次看 A、B、C、A，历史会排成 A、C、B。「我的」在每次 `onShow` 时重读，返回页面就能看到详情页刚改的内容。
 
-个人中心的头像和昵称只用于前端模拟登录。新闻也没有接学校网站接口，列表展示的仍是随应用打包的那批数据。
+<div class="grid grid-cols-2 items-start gap-3">
+<img src="/posts/2026-summer-mobile-development-experiment-3/image-6.png" width="300" alt="个人中心最近浏览列表">
+<img src="/posts/2026-summer-mobile-development-experiment-3/image-4.png" width="300" alt="原生分享面板">
+</div>
 
-## 真机上传卡在 2 MB
+## 模拟器能跑，真机上传却超了 2 MB
 
-开发者工具报了 `80051`，显示源码包有 6886 KB。核对引用后，我把两张未用的 JPG 移出项目，对剩下 11 张做了 EXIF 方向校正和缩放，再以 JPEG quality 72 保存。普通新闻图控制在 850 px，轮播图约 1000 px，文件名保持原样，`poster` 和 `bannerList` 无须改。处理后本地项目目录约 0.996 MB，引用已检查。原记录停在这一步，真机上传仍待验证，分享也只在开发者工具里走过模拟面板。
+换上真实新闻配图以后，开发者工具真机上传报 `80051`，显示包有 6886 KB。我按 `poster` 和 `bannerList` 核对图片引用，把两张没用的 JPG 移出项目。剩下 11 张用 Pillow 校正方向、缩放，再以 JPEG quality 72 保存。普通图最大宽度取 850 px，轮播图约 1000 px，文件名保留，原来的页面引用也能继续用。
+
+处理后，本地项目目录约 0.996 MB，图片引用已复核。首页、详情、收藏和最近浏览都有开发者工具中的运行记录，分享只走了模拟面板。重新打包上传真机还待验证。
