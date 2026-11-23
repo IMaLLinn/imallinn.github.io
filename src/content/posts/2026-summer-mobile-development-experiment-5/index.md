@@ -51,14 +51,66 @@ console.log(display());
 
 实际计算器收到按键时，先更新原值，再格式化给页面。下面的笔记还对照了科学键盘和图像求值的差别，以及如何保存整道算式供历史记录恢复。
 
-## 这段逻辑在鸿蒙计算器里的位置
+## 第三步 · 在 ArkUI 里把同一道算式做成按钮
 
-这次从微信小程序换到 ArkTS 和 ArkUI，我做了一台能逐键算、能画函数图像的鸿蒙计算器。先把「按键后接着算」这条路径跑通，再做科学键盘和绘图，最后把能回填的历史记录接回来。三个地方用了不同的状态。数值用来继续算，显示字符串用来给人看，历史快照用来恢复当时的输入。
+1. 打开 DevEco Studio，新建一个 **Empty Ability** 的 ArkTS 工程。先选模拟器运行模板页。能看到模板页面以后，再改 `entry/src/main/ets/pages/Index.ets`。如果工具栏还没有可选设备，按[官方模拟器说明](https://developer.huawei.com/consumer/en/doc/HarmonyOS-Guides/ide-emulator-specification/)先启动一个模拟器。
+2. 用下方代码替换这个新工程的 `Index.ets`，工程里的入口和页面路由保持模板原样。`value` 用来续算，`display` 是界面上的文字。加在 `display` 上的 `@State` 让界面跟随它刷新。[ArkUI 状态说明](https://developer.huawei.com/consumer/en/doc/harmonyos-guides/arkts-state/)
+
+```arkts
+@Entry
+@Component
+struct Index {
+  @State display: string = '0'
+  private value: number = 0
+
+  build() {
+    Column({ space: 12 }) {
+      Text(this.display).fontSize(42)
+      Button('1 ÷ 3').onClick(() => {
+        this.value = 1 / 3
+        this.display = this.value.toFixed(2)
+      })
+      Button('× 3').onClick(() => {
+        this.value = this.value * 3
+        this.display = this.value.toFixed(2)
+      })
+    }
+    .width('100%')
+    .padding(24)
+  }
+}
+```
+
+3. 再次运行 `entry`。页面应显示 `0` 和两个按钮。点「1 ÷ 3」，应看到 `0.33`；再点「× 3」，应看到 `1.00`。如果还显示模板的文字，先核对改的是 `entry/src/main/ets/pages/Index.ets`，并确认工具栏运行的是刚才创建的工程。最小页面跑通后，再导入下方原工程看完整键盘和绘图。
+
+## 在 DevEco Studio 里跑出完整计算器
+
+1. 安装 DevEco Studio。解压 [课程仓库](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip)，从 DevEco Studio 欢迎页选择「Open」，打开 `experiments/experiment-05` 整个工程。该目录同时有 `build-profile.json5`、`oh-package.json5` 和 `entry`。项目目标 SDK 是 `26.0.0`，最低兼容配置是 `6.1.1(24)`。等依赖同步完成，若提示缺 SDK，按工程给出的版本安装。[DevEco Studio 安装说明](https://developer.huawei.com/consumer/en/doc/HarmonyOS-Guides/ide-software-install/)
+2. 在设备管理中启动匹配的模拟器，或接入已配置调试签名的设备。回到工具栏选择 `entry` 和相应设备，点运行。启动后的主页应该能切换基础计算、科学计算和函数图像。没有可选设备时，先解决设备连接或模拟器镜像，再排查页面代码。[设备运行说明](https://developer.huawei.com/consumer/en/doc/doccenter-deveco-studio/ide-run-device/)
+3. 在基础键盘按 `1 → 2 → + → 8 → =`，应显示 `20`。换到科学键盘，在 DEG 下输入 `30` 再按 `sin`，应得到 `0.5`。最后在函数图像里输入 `1/x`，核对曲线在零点两侧断开。
 
 <div class="grid grid-cols-2 items-start gap-3">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/basic-calculation.png" width="280" alt="基础计算界面与 12 + 8 的计算结果">
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/graph-reciprocal.png" width="280" alt="函数 y = 1/x 在零点两侧分段绘制">
 </div>
+
+*原项目对照。左图核对基础计算的结果区，右图核对零点两侧有没有一条线连过去。*
+
+要找按键连接方式，打开 `entry/src/main/ets/pages/Index.ets`，从点击事件跟到 `entry/src/main/ets/utils/CalculatorUtils.ets`。同一个 `utils` 目录里的 `GraphExpression.ets` 负责解析表达式和采样。
+
+工程还带两个本地验证脚本。应用暂时跑不起来时，可以先在 `experiment-05` 目录下跑以下命令。把第一行里的路径换成本机的 DevEco Studio 安装路径，保留末尾的 `tools/ohpm/node_modules/typescript/lib/typescript.js`。
+
+```powershell
+$ts = '你的安装目录/tools/ohpm/node_modules/typescript/lib/typescript.js'
+node tests/verify-calculator.cjs $ts
+node tests/verify-graph.cjs $ts
+```
+
+原仓库这两个脚本分别打印 `PASS: 121 calculator / graph assertions` 和 `PASS 54 graph checks`。它们验证计算和绘图逻辑，页面操作用上面的按键顺序检查。[HarmonyOS 计算器原始工程](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-05)
+
+## 这段逻辑在鸿蒙计算器里的位置
+
+这次从微信小程序换到 ArkTS 和 ArkUI，我做了一台能逐键算、能画函数图像的鸿蒙计算器。先把「按键后接着算」这条路径跑通，再做科学键盘和绘图，最后把能回填的历史记录接回来。三个地方用了不同的状态。数值用来继续算，显示字符串用来给人看，历史快照用来恢复当时的输入。
 
 ### 一个按键进来以后，谁来算结果
 

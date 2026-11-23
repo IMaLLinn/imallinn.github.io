@@ -110,7 +110,20 @@ document.querySelector('#undo').onclick = () => {
 | 再向右一次 | 前面是墙，猫和碗都留在原地 |
 | 撤销一次 | 回到「碗在目标上」，撞墙没有占掉撤销记录 |
 
+<figure>
+  <img src="/tutorials/mobile/push-states.png" width="375" height="410" alt="同一棋盘的起点、碗在目标上、碗离开目标和撤销后四个状态">
+  <figcaption>直接运行本节的 Canvas 页面得到的四个状态。第三排看圆点是否还在，第四排看碗是否回到了圆点上。</figcaption>
+</figure>
+
 如果移动后圆点找不回来，检查 `draw()` 是否每次都用固定的 `goal` 重画圆点。如果按钮一直不动，先核对两个脚本的文件名和顺序。小程序里的 Canvas、滑动和四关地图接在相同的状态上。
+
+## 把浏览器里的操作搬到原版上验证
+
+1. 解压 [课程仓库](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip)，用微信开发者工具导入 `experiments/experiment-04/project`。确认里面有 `project.config.json` 和 `data/levels.js`。使用自己有权限的 AppID。原版使用 Skyline，提示渲染器不兼容时，先选支持 Skyline 的基础库。
+2. 编译后从欢迎页打开选关，进入第一关。在棋盘上滑一步再点撤销，核对位置和步数能否一起退回去。再向墙滑，核对这次没有增加步数。原版的欢迎页、关卡和成绩截图在下文。
+3. 打开 `data/levels.js`，找第一关的目标和初始坐标。再沿 `utils/game.js` 的 `tryMove()` 跟进 `pages/game/game.js`，找到移动成功后保存撤销快照的位置。
+
+[MEOW PUSH 原始源码](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-04/project)
 
 ## 从一排棋盘到 MEOW PUSH
 

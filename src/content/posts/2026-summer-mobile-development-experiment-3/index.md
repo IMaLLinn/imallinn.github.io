@@ -24,7 +24,10 @@ accent: "blue"
 把 `app.json` 改成下面这样，先只注册首页。
 
 ```json
-{ "pages": ["pages/index/index"] }
+{
+  "pages": ["pages/index/index"],
+  "window": { "navigationBarTitleText": "新闻列表" }
+}
 ```
 
 在源码目录创建 `utils/news.js`。每条新闻的 `id` 都不同，稍后点击时就靠它找到那一条。
@@ -50,6 +53,11 @@ Page({ data: { news } });
 ```
 
 编译后应该看到「海边的观测课」和「新学期开学」。如果只看到空白，先查首页 JS 的 `data.news` 和模板里的 `{{news}}` 是否同名。
+
+<figure>
+  <img src="/tutorials/mobile/news-list.png" width="375" height="240" alt="列表显示海边的观测课和新学期开学两条新闻">
+  <figcaption>第一步对照。只核对两条标题，按钮暂时点不进去。以下对照图都用文内 WXML 编译后在浏览器渲染，模拟器的样式可能不同。</figcaption>
+</figure>
 
 ## 第二步 · 把详情页的文件备好
 
@@ -77,7 +85,7 @@ Page({
 <view wx:else>没有找到这条新闻</view>
 ```
 
-两个详情页文件都保存后，再把 `app.json` 改为 `{ "pages": ["pages/index/index", "pages/detail/detail"] }`。重新编译，首页仍会显示两条新闻。现在点按钮还不会跳转，下一步再接点击动作。
+在详情页同目录下创建 `detail.json`，内容写成 `{ "navigationBarTitleText": "新闻详情" }`。保存这三个详情页文件后，再去 `app.json`，把 `pages` 改成 `["pages/index/index", "pages/detail/detail"]`，保留下面的 `window`。重新编译，首页仍会显示两条新闻。现在点按钮还不会跳转，下一步再接点击动作。
 
 ## 第三步 · 点击不同标题，打开不同正文
 
@@ -104,6 +112,11 @@ Page({
 ```
 
 重新编译。点第一条应看到「这周的练习在海边采样」，返回后点第二条应看到「新同学今天到校报到」。点了没跳，先核对详情页是否在 `app.json` 里。进了详情却找不到新闻，检查首页的 `data-id`、链接里的 `?id=` 和详情页的 `options.id`。三处都应该带着同一个编号。
+
+<figure>
+  <img src="/tutorials/mobile/news-detail.png" width="375" height="240" alt="点第二条新闻后，详情页显示新学期开学及对应正文">
+  <figcaption>第三步对照。这里点的是第二条，所以标题和正文都应该是开学那条。</figcaption>
+</figure>
 
 ## 第四步 · 收藏一条新闻，再回来确认
 
@@ -136,6 +149,19 @@ Page({
 ```
 
 重新编译，进第一条新闻点「收藏」。按钮应变成「取消收藏」，返回首页再打开第一条也应保留。打开第二条，按钮仍应写「收藏」。如果两条总是一起变化，回去确认保存和读取用的键都带了各自的 `article.id`。
+
+<figure>
+  <img src="/tutorials/mobile/news-saved.png" width="375" height="240" alt="重新打开海边的观测课，按钮仍然显示取消收藏">
+  <figcaption>第四步对照。退回再打开第一条新闻后，按钮仍写着「取消收藏」，说明刚才的操作已经保存。</figcaption>
+</figure>
+
+## 跟着三次操作读懂完整版 OUC NEWS
+
+1. 解压 [课程仓库](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip)，在微信开发者工具导入 `experiments/experiment-03/project`。选中的目录应直接含 `project.config.json`、`app.json` 和 `utils`。使用你有权限的 AppID，点「编译」后应看到轮播和分类。如果本机不能用配置里的试用基础库，改选工具里可用的稳定基础库再编译。
+2. 在首页输入 `2026`，确认新闻变少。点一条结果，核对详情标题。回去看 `utils/common.js` 的本地数据，沿 `pages/index/index.js` 的跳转跟到 `pages/detail/detail.js`，对照最小练习里的 `data-id` 和 `options.id`。
+3. 在详情点收藏，返回底栏「我的」。按页面提示选择头像、填写昵称，让前端模拟登录进入已登录状态。检查刚才的新闻能否从收藏再次打开，再回来看最近浏览。读取两类记录的代码在 `pages/my/my.js`。
+
+导入时如果只看到报告和另一个 `project` 文件夹，说明还没选到源码所在的那一层。[OUC NEWS 原始源码](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-03/project)
 
 ## 完整 OUC NEWS 里遇到的情况
 

@@ -75,7 +75,20 @@ seriesOrder: 2
 
 编译后，在介绍区内往下滑，应该能读到最后一段，封面还在原处。如果所有文字都在屏幕上，复制一段 `paragraph` 让内容超出 220 rpx，再试着滑动。若滚不动，确认 `scroll-y` 已开启、`.profile` 有固定高度，并使用第一步里列出的 `app.json`。
 
+<figure>
+  <img src="/tutorials/mobile/card-scroll.png" width="375" height="396" alt="名片介绍已滚到最后一段，文字封面仍在上面">
+  <figcaption>第三步对照。滚到「再加几行介绍」时，封面仍在原处。图由文内模板编译后在浏览器渲染。</figcaption>
+</figure>
+
 想换成照片时，把一张 16:9 图片保存为源码目录的 `img/card.png`。在 `index.wxml` 找到含 `PERSONAL CARD` 的那一行，整行换成 `<image src="../../img/card.png" mode="widthFix" style="width:100%" />`，再编译确认图片铺满卡片宽度，介绍还能独立滚动。
+
+## 实际打开原版名片
+
+1. 解压 [课程仓库](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip)。在微信开发者工具选「导入项目」，目录选 `experiments/experiment-02`，这一层有自己的 `project.config.json`。使用你有权限的 AppID。
+2. 点「编译」，先检查 16:9 头图，再在介绍区内滚到末尾。打开 `pages/index/index.wxml`，把画面和里面的 `image`、`Personal Card`、`scroll-view` 对上。
+3. 在 `pages/index/index.wxss` 暂时把正文改为居中并编译，观察长段落换行后每行从哪里起笔。恢复左对齐后再看一次。动手前留一份原文件，方便恢复。
+
+原版配置了 Skyline。若行内关键词被单独拆到一行，先看原项目 `app.json` 的渲染器配置和正文中嵌套的 `text`。[个人名片原始源码](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-02)
 
 ## 原来的名片是怎么调顺的
 

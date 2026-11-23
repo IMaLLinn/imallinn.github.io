@@ -69,6 +69,15 @@ console.log('新发布后的动态数', posts.size);
 
 这个练习只演示一个用户的单条发布。原项目用云函数从调用上下文识别用户，再用用户和请求编号一起定位文档。照片文件如何传到云存储、动态和计数怎样写在一起，下面再接着看。
 
+## 用原仓库复现发布和测试
+
+1. 解压 [课程仓库](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip)，用微信开发者工具导入 `experiments/experiment-06`。这一层有 `project.config.json`，它把前端指到 `miniprogram/`、云函数指到 `cloudfunctions/`。如果导入后只看到旧模板首页，先核对导入的目录和 `miniprogramRoot`，不要把根目录的旧 `app.js` 当成照片社区入口。
+2. 先不连云。在终端进入 `experiment-06`，运行 `node --test tests/stage1.test.js`。这一版应看到 38 项测试通过。它验证内存数据下的重复发布、事务回滚等逻辑，方便先确认代码路径。
+3. 想验证完整页面时，使用你自己的小程序 AppID 和 CloudBase 测试环境。在 `miniprogram/config.js` 写入自己的环境 ID；按原仓库的部署说明创建集合和索引，再把 `cloudfunctions/` 里的函数部署到同一环境。原仓库的环境配置仅作定位示例。云函数目录下的 `createPost/index.js` 是保存动态的入口。[原仓库部署顺序及索引](https://github.com/IMaLLinn/Mobile-Development2026/blob/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-06/README.md)
+4. 编译后，在底栏打开「发布」，选一张你愿意上传到自己测试环境的照片。上传后回到「首页 → 最新」，检查是否出现一条动态，点进去核对是不是同一张图。如果停在 95%，先看云函数 `createPost` 是否部署到了配置指向的环境，再查云日志。需要清理时，只删自己测试环境里刚发布的动态。
+
+没有可用的云环境时，前面的 Node.js 练习和本地测试都可以独立运行。云权限、认证和真机分享需要各自联调。[海大一刻原始源码](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-06)
+
 ## 海大一刻的发布链路
 
 OUC NEWS 的内容和收藏都在本地。「海大一刻」需要在不同用户之间传照片。同学发布一组照片，其他人能从最新列表或关注列表看到它，点进详情后还能评论。我从一张照片开始，先确认它能上传、形成一条动态，再从首页读回来。

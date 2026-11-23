@@ -57,6 +57,14 @@ print(f"写入 {len(questions)} 条")
 
 再对着同一个编号运行 `python batch.py a`，应出现 `FileExistsError`，原结果仍会保留。这里的 `x` 模式只允许创建新文件。若一开始报找不到 `questions.jsonl`，先把终端切到保存两个文件的目录。JSON 的格式可对照 [Python 标准库文档](https://docs.python.org/3/library/json.html)。
 
+## 对照 GitHub 上的真实输入和脚本
+
+1. 打开原仓库的 [`questions.jsonl`](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e4a8c088f73ac76cd17038d078c6684b018c53d1/questions.jsonl)。这一版有三道题，字段叫 `id`、`prompt`、`expected`。拿第一道题找到相同编号的 [`results.jsonl`](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e4a8c088f73ac76cd17038d078c6684b018c53d1/results.jsonl) 记录，对照题目、参考答案和模型回答。归档样例是早期结果，字段比当前脚本少。
+2. 下载仓库后，在 `callmodel.py` 所在目录执行 `python callmodel.py --help`。应看到 `--model` 和 `--price-period` 两个选项。这一步只查看说明，不输入密钥。原仓库的 `.python-version` 记录了 Python 3.12.10，可先用 `python --version` 对照。
+3. 想运行真实请求时，再使用自己的 DeepSeek API 密钥。调用会计入你的账户用量。选择脚本 `--help` 中支持的一个模型，并明确传入对应计价时段的 `--price-period`。提示输入密钥时在终端输入，密钥无需写进文件。完成后看同目录新生成的 `<模型名>results_<run_id>.jsonl`，核对每条题的 `status`、耗时和 token 用量。费用是按脚本里的价格表估算的。
+
+没准备密钥时，先做上面离线练习和前两步即可。[批量调用源码](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e4a8c088f73ac76cd17038d078c6684b018c53d1/callmodel.py)
+
 ## 首周搭建的真实调用流程
 
 我想拿同一批问题比较模型的答案质量、延迟和成本。以后换模型或改版本时，还得能把同一批题跑一遍，有旧记录可以对照。首周从 JSONL 题目开始，先把一条题目从输入文件送到模型，再把回答和这次调用的信息存下来。

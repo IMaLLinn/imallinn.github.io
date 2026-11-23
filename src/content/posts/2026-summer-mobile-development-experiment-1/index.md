@@ -18,7 +18,11 @@ seriesOrder: 1
 
 ## 第一步 · 找到要写代码的目录
 
-安装并打开微信开发者工具，创建一个「小程序」类型的 JavaScript 项目，目录选一个空文件夹。用项目面板找到 `app.json`。如果你还看到了外面有一层 `miniprogram/`，以 `app.json` 所在的目录为准。下面的路径都从这里开始算，工具生成的项目配置留在原位。创建和导入项目可对照[小程序起步](https://developers.weixin.qq.com/miniprogram/dev/framework/quickstart/)。
+1. 安装并打开微信开发者工具，在项目列表里点新建，项目类型选「小程序」。项目名可以叫 `hello-title`，目录选一个空文件夹。
+2. AppID 用你有权限的值。如果还没注册小程序，并且界面提供「测试号」或本地体验选项，可用它先做这一节。模板选 JavaScript 基础模板，本节不需要云开发。
+3. 创建成功后，先在项目面板找到 `app.json`。如果外面还有一层 `miniprogram/`，以 `app.json` 所在的目录为准。下面的文件路径都从这里开始。工具生成的 `project.config.json` 留在原位。
+
+创建页的字段和入口见[小程序起步](https://developers.weixin.qq.com/miniprogram/dev/framework/quickstart/)。
 
 ## 第二步 · 先让模拟器打开首页
 
@@ -66,6 +70,19 @@ Page({
 ```
 
 重新编译，点两次，确认导航栏和正文依次切到 `boy` 和 `girl`。如果按钮没反应，看 WXML 的 `bindtap` 和 JS 的方法名是否都是 `switchTitle`。这里可以接着放一张自己的图片。把图片存到源码根目录的 `img/OIP.jpg`，在按钮下面、外层 `view` 里面加入 `<image src="../../img/OIP.jpg" mode="widthFix" style="width:100%" />`，再编译确认它出现在按钮下方。
+
+<figure>
+  <img src="/tutorials/mobile/hello-toggle.png" width="375" height="240" alt="点击一次后，导航栏和正文都显示 HELLO boy">
+  <figcaption>第三步对照。点一下按钮后，两处都变成 HELLO boy。图由文内模板编译后在浏览器渲染，模拟器的字体和边距可能不同。</figcaption>
+</figure>
+
+## 打开原仓库里的第一个小程序
+
+1. [下载课程仓库的 ZIP](https://github.com/IMaLLinn/Mobile-Development2026/archive/850fe48247e1cc27254ff59eee537bbe8b14bdbe.zip) 并解压，打开 `experiments/experiment-01`。这一层应同时看到 `project.config.json`、`app.json` 和 `pages`。
+2. 在微信开发者工具的项目列表选「导入项目」，目录选刚才那一层。AppID 选你有权限使用的值。如果工具提供测试号选项，可以用它做本地练习。
+3. 点「编译」。在首页连点两次按钮，核对导航栏从 `HELLO girl` 到 `HELLO boy` 再变回来。原版有自己的导航栏组件。查实现时，先看 `pages/index/index.wxml` 传给导航栏的标题，再看 `pages/index/index.js` 怎么更新 `wording`。
+
+如果导入时找不到配置文件，回文件管理器核对。要选的是 `experiment-01`，再往外一层是装六个实验的目录，再往里一层就只剩页面文件。[第一个小程序的原始源码](https://github.com/IMaLLinn/Mobile-Development2026/tree/850fe48247e1cc27254ff59eee537bbe8b14bdbe/experiments/experiment-01)
 
 ## 我最初碰到的两个问题
 
