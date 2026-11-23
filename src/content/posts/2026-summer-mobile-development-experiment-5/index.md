@@ -3,7 +3,7 @@ title: "2026夏移动软件开发实验五"
 pubDate: 2026-09-07T15:39:00+08:00
 slug: 2026-summer-mobile-development-experiment-5
 draft: false
-description: "用 ArkTS 实现科学计算与函数绘图，分开处理显示舍入、表达式语法和曲线间断。"
+description: "先跑通不把显示值当成计算值的最小算例，再看鸿蒙计算器怎样处理绘图和历史。"
 summary: "ArkTS 科学计算器，支持函数绘图、历史算式回填与本地偏好。"
 tags: ["HarmonyOS", "ArkTS", "ArkUI", "Canvas", "计算器", "项目"]
 categories: ["移动软件开发"]
@@ -15,6 +15,44 @@ visualStyle: "chart"
 accent: "violet"
 ---
 
+做完这节，你能在终端重现一个计算器的小坑。把 `1 ÷ 3` 显示成 `0.33` 后，拿显示值继续乘 3 会得到 `0.99`。如果保存了原来的计算值，就会显示 `1.00`。下面先用 Node.js 跑这个独立例子，再看它怎样接到 ArkUI 的按键和结果区。
+
+在终端输入 `node --version`。如果找不到命令，先安装 Node.js，重新打开终端再试。看到版本号后，新建一个空文件夹，在这个目录里执行下面的命令。[Node.js 下载页](https://nodejs.org/en/download)
+
+## 第一步 · 先看错误的续算结果
+
+新建 `calculator.mjs`。先做除法，把答案格式化成两位小数，再把它转回数字去乘。
+
+```js
+const value = 1 / 3;
+const display = value.toFixed(2);
+const total = Number(display) * 3;
+
+console.log(display);
+console.log(total.toFixed(2));
+```
+
+执行 `node calculator.mjs`，应打印 `0.33` 和 `0.99`。第一行是给人看的显示文字。第二行少掉的部分，是从第一步舍入以后就丢掉的。
+
+## 第二步 · 保存原值，再做一次
+
+把整个 `calculator.mjs` 换成下面这版。`value` 负责运算，只有更新显示时才格式化。
+
+```js
+let value = 1 / 3;
+const display = () => value.toFixed(2);
+
+console.log(display());
+value = value * 3;
+console.log(display());
+```
+
+再次运行，第二行应变成 `1.00`。把两处打印结果的代码都换成 `console.log(value)`，再看一遍实际的计算值。你会看到第一行比 `0.33` 保留了更多位。如果仍得到 `0.99`，搜索一下文件里是不是还在用 `Number(display)` 或 `Number(display())` 续算。
+
+实际计算器收到按键时，先更新原值，再格式化给页面。下面的笔记还对照了科学键盘和图像求值的差别，以及如何保存整道算式供历史记录恢复。
+
+## 这段逻辑在鸿蒙计算器里的位置
+
 这次从微信小程序换到 ArkTS 和 ArkUI，我做了一台能逐键算、能画函数图像的鸿蒙计算器。先把「按键后接着算」这条路径跑通，再做科学键盘和绘图，最后把能回填的历史记录接回来。三个地方用了不同的状态。数值用来继续算，显示字符串用来给人看，历史快照用来恢复当时的输入。
 
 <div class="grid grid-cols-2 items-start gap-3">
@@ -22,7 +60,7 @@ accent: "violet"
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/graph-reciprocal.png" width="280" alt="函数 y = 1/x 在零点两侧分段绘制">
 </div>
 
-## 一个按键进来以后，谁来算结果
+### 一个按键进来以后，谁来算结果
 
 页面把数字键、运算键和等号交给当前的 `Calculator`。计算器保存当前数值、左操作数、运算符以及是否在等下一项。比如输入 `2 + 3 × 4`，按下乘号时会先把 `2 + 3` 算成 5，再等右侧的新数字，最后得到 20。基础与科学键盘各自留着一份输入状态，切换时不会把另一区的半截算式带过来。
 
@@ -40,7 +78,7 @@ accent: "violet"
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/calculation-error.png" width="280" alt="计算异常时显示“错误”">
 </div>
 
-## 函数画到哪里该停笔
+### 函数画到哪里该停笔
 
 绘图拿到的是整段字符串，没有「按下一个运算符就先算左边」的过程。`GraphExpression.ets` 用递归下降把加减、乘除、正负号和括号分层。外层处理加减，内层先算乘除，所以 `2+3*4` 得到 14。乘方的右侧再走一次解析，`2^3^2` 按 `2^(3^2)` 算出 512。图像里的三角函数统一用弧度，乘法也要求明确写 `*`。
 
@@ -76,7 +114,7 @@ else { ctx.moveTo(px, py); }
 <img src="/posts/2026-summer-mobile-development-experiment-5/images/dark-theme.png" width="280" alt="深色主题下的基础计算界面">
 </div>
 
-## 历史记录要能改回那道算式
+### 历史记录要能改回那道算式
 
 我想点开历史以后，还能把 `12 + 8` 里的 8 换成 9。只存答案 `20` 恢复不出来，所以按等号时先存操作数、运算符、分组和输入状态，再生成最终记录。回填时复制分组数组，否则改了当前算式也可能动到历史那份。测试先召回 `12 + 8`，退格写 9 得到 21，再点原记录仍得到 20。
 

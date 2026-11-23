@@ -3,7 +3,7 @@ title: "2026夏移动软件开发实验三"
 pubDate: 2026-08-31T14:27:00+08:00
 slug: 2026-summer-mobile-development-experiment-3
 draft: false
-description: "用本地新闻数据串起分类搜索、详情与浏览记录，排查真机上传时的资源超限。"
+description: "用两条本地新闻做出首页和详情页，跟着核对列表、跳转参数和详情内容。"
 summary: "把分类、搜索、详情路由和本地浏览记录串进 OUC NEWS，实测压缩后的项目目录约 0.996 MB。"
 tags: ["微信小程序", "WXML", "WXSS", "JavaScript", "Storage", "项目"]
 categories: ["移动软件开发"]
@@ -15,6 +15,130 @@ cover: "/posts/2026-summer-mobile-development-experiment-3/image.png"
 accent: "blue"
 ---
 
+你会做出 OUC NEWS 的一条最小路径。打开微信小程序先看到两条标题，点哪一条，就进入显示对应正文的详情页。下面用两条练习数据，页面和数据都在本地。跑通这一段以后，再看原项目怎么加搜索、收藏和浏览记录。
+
+准备微信开发者工具，建一个 JavaScript 小程序项目。路径都相对于小程序源码目录。保留工具生成的项目配置，把 `app.js` 写为 `App({})`。小程序的页面注册和基本文件可以对照[官方起步指南](https://developers.weixin.qq.com/miniprogram/dev/framework/quickstart/)。
+
+## 第一步 · 先在首页显示两条新闻
+
+把 `app.json` 改成下面这样，先只注册首页。
+
+```json
+{ "pages": ["pages/index/index"] }
+```
+
+在源码目录创建 `utils/news.js`。每条新闻的 `id` 都不同，稍后点击时就靠它找到那一条。
+
+```js
+module.exports = [
+  { id: '1', title: '海边的观测课', body: '这周的练习在海边采样。' },
+  { id: '2', title: '新学期开学', body: '新同学今天到校报到。' }
+];
+```
+
+在 `pages/index/index.js` 读入这份数据，再交给页面。
+
+```js
+const news = require('../../utils/news.js');
+Page({ data: { news } });
+```
+
+把下面内容存进 `pages/index/index.wxml`。`wx:for` 会为数组里的每条新闻画一个按钮。
+
+```xml
+<button wx:for="{{news}}" wx:key="id">{{item.title}}</button>
+```
+
+编译后应该看到「海边的观测课」和「新学期开学」。如果只看到空白，先查首页 JS 的 `data.news` 和模板里的 `{{news}}` 是否同名。
+
+## 第二步 · 把详情页的文件备好
+
+先创建 `pages/detail/detail.js`。详情页打开时，`onLoad(options)` 会收到链接上的 `id`。
+
+```js
+const news = require('../../utils/news.js');
+
+Page({
+  data: { article: null },
+  onLoad(options) {
+    const article = news.find(item => item.id === options.id) || null;
+    this.setData({ article });
+  }
+});
+```
+
+在 `pages/detail/detail.wxml` 显示查到的内容。找不到这条新闻时给出一行提示。
+
+```xml
+<block wx:if="{{article}}">
+  <view>{{article.title}}</view>
+  <view>{{article.body}}</view>
+</block>
+<view wx:else>没有找到这条新闻</view>
+```
+
+两个详情页文件都保存后，再把 `app.json` 改为 `{ "pages": ["pages/index/index", "pages/detail/detail"] }`。重新编译，首页仍会显示两条新闻。现在点按钮还不会跳转，下一步再接点击动作。
+
+## 第三步 · 点击不同标题，打开不同正文
+
+回到 `pages/index/index.wxml`，把原来的按钮行换成下面这段。按钮现在除了标题，还带着自己的新闻编号。
+
+```xml
+<button wx:for="{{news}}" wx:key="id" data-id="{{item.id}}" bindtap="openNews">
+  {{item.title}}
+</button>
+```
+
+把 `pages/index/index.js` 换成下面这版。
+
+```js
+const news = require('../../utils/news.js');
+
+Page({
+  data: { news },
+  openNews(event) {
+    const id = event.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/detail/detail?id=' + encodeURIComponent(id) });
+  }
+});
+```
+
+重新编译。点第一条应看到「这周的练习在海边采样」，返回后点第二条应看到「新同学今天到校报到」。点了没跳，先核对详情页是否在 `app.json` 里。进了详情却找不到新闻，检查首页的 `data-id`、链接里的 `?id=` 和详情页的 `options.id`。三处都应该带着同一个编号。
+
+## 第四步 · 收藏一条新闻，再回来确认
+
+先改 `pages/detail/detail.js`，把整个文件替换成下面这版。每条新闻有一个自己的收藏键，像第一条就是 `news_1`。点收藏时把当前新闻存进去，再点一次就删除。
+
+```js
+const news = require('../../utils/news.js');
+
+Page({
+  data: { article: null, saved: false },
+  onLoad(options) {
+    const article = news.find(item => item.id === options.id) || null;
+    const saved = article ? Boolean(wx.getStorageSync('news_' + article.id)) : false;
+    this.setData({ article, saved });
+  },
+  toggleSave() {
+    const { article, saved } = this.data;
+    const key = 'news_' + article.id;
+    if (saved) wx.removeStorageSync(key);
+    else wx.setStorageSync(key, article);
+    this.setData({ saved: !saved });
+  }
+});
+```
+
+在 `pages/detail/detail.wxml` 找到显示正文的 `<view>{{article.body}}</view>`，紧接着在下一行加入下面这段，放在 `</block>` 之前。
+
+```xml
+<button bindtap="toggleSave">{{saved ? '取消收藏' : '收藏'}}</button>
+```
+
+重新编译，进第一条新闻点「收藏」。按钮应变成「取消收藏」，返回首页再打开第一条也应保留。打开第二条，按钮仍应写「收藏」。如果两条总是一起变化，回去确认保存和读取用的键都带了各自的 `article.id`。
+
+## 完整 OUC NEWS 里遇到的情况
+
 前两次的小程序都只改了一个页面。这次做 OUC NEWS，我想从首页点进一条海大新闻，读完回到列表，过一会儿还能从收藏或最近浏览里找回来。先用本地的八条新闻做这条链路，数据、图片都跟着小程序打包。这样能先把页面之间怎么传数据弄清楚，账号登录也只在「我的」页做头像和昵称的前端模拟。
 
 <div class="grid grid-cols-2 items-start gap-3">
@@ -22,7 +146,7 @@ accent: "blue"
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-2.png" width="300" alt="Featured 轮播新闻">
 </div>
 
-## 先让一条新闻从首页走到详情
+### 先让一条新闻从首页走到详情
 
 首页和「我的」在底部 tabBar，详情是点新闻以后才打开的二级页。三页都在 `app.json` 里注册。数据集中在 `utils/common.js`，每条有自己的 ID、标题、图片、正文、日期和分类。首页用 `getNewsList()` 取列表，详情用 `getNewsDetail(id)` 找原始记录，轮播也只需在自己的四张图上记好相应的新闻 ID。
 
@@ -32,7 +156,7 @@ accent: "blue"
 
 进详情也有一个容易看错的现象。点击后只显示 `pages/detail/detail.wxml`，看起来像跳转失败，其实已经到了新页，展示的还是开发者工具生成的占位文字。把卡片的 `data-id`、点击事件的 `dataset.id`、跳转 URL 的 `?id=` 和详情页的 `options.id` 连起来查，最后在详情页查到新闻后用 `setData({ news })` 交给模板。改完，标题、来源、图片和正文能一起显示。分享入口复用了这条详情路径，并把当前新闻标题放进分享卡片。
 
-## 分类和搜索共用一份原始列表
+### 分类和搜索共用一份原始列表
 
 最初的列表只有一批数据。加分类以后，如果每点一次就把筛过的数组覆盖回去，切到「全部」时就没法从手头的结果找回其他类别。后来又加了关键词输入，两处各自改列表也容易把对方的条件覆盖掉。我把 `newsList` 留作原始数组，分类和搜索各自维护当前状态，最后一起走 `applyFilters()`。
 
@@ -64,7 +188,7 @@ applyFilters: function () {
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-3.png" width="300" alt="新闻详情阅读页">
 </div>
 
-## 加了最近浏览，为什么收藏也要改
+### 加了最近浏览，为什么收藏也要改
 
 收藏先按 `news_ + id` 存，每条新闻用一个键。详情页再点一次收藏，就删除这一条。「我的」通过枚举 `news_` 前缀把它们取回来。这个规则一开始很方便，加历史以后就碰到了边界。
 
@@ -79,7 +203,7 @@ applyFilters: function () {
 <img src="/posts/2026-summer-mobile-development-experiment-3/image-4.png" width="300" alt="原生分享面板">
 </div>
 
-## 模拟器能跑，真机上传却卡在 2 MB
+### 模拟器能跑，真机上传却卡在 2 MB
 
 替换成真实新闻图片以后，开发者工具上传真机调试包报 `80051`，提示源码包有 6886 KB，超过 2 MB。这个数是工具报的打包大小，我另外查了项目目录，约 6.41 MB，其中 `images/` 的 13 张 JPG 就占约 6.38 MB。已经不必再猜是 JS 逻辑或页面配置导致的。
 

@@ -3,7 +3,7 @@ title: "2026夏移动软件开发实验四"
 pubDate: 2026-09-01T16:56:00+08:00
 slug: 2026-summer-mobile-development-experiment-4
 draft: false
-description: "用微信小程序 Canvas 2D 做四关推箱子，记录棋盘状态、滑动防误触和撤销栈的设计。"
+description: "先在浏览器里做出一排可推碗、可撤销的 Canvas 棋盘，再读四关版本的设计。"
 summary: "四关 Canvas 2D 像素推箱子，支持滑动、撤销、计时和本地进度。"
 tags: ["微信小程序", "Canvas", "JavaScript", "小游戏", "Storage", "项目"]
 categories: ["移动软件开发"]
@@ -14,6 +14,106 @@ displayTitle: "MEOW PUSH 像素推箱子"
 visualStyle: "pixel"
 ---
 
+先用浏览器做一排能动的推箱子。深灰色圆点是目标，橙色方块是碗。推两次，碗会经过目标又离开，目标还留在原来的格子里。再点撤销，碗会回到目标上。这几步用到了微信小程序版 MEOW PUSH 的棋盘分层和撤销思路。
+
+准备一个空文件夹、文本编辑器和现代浏览器。三个文件都放在同一个文件夹里。
+
+## 第一步 · 先画出一排棋盘
+
+新建 `push.html`。这是浏览器打开的页面，两个脚本会按先后顺序执行。
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>推碗练习</title>
+<h1>把碗推过目标</h1>
+<canvas id="board" width="288" height="48" aria-label="六格棋盘"></canvas>
+<p id="status"></p>
+<button id="left">向左走</button>
+<button id="right">向右走</button>
+<button id="undo">撤销</button>
+<script src="board.js"></script>
+<script src="move.js"></script>
+</html>
+```
+
+新建 `board.js`。从 0 开始给六格编号，最两端是墙。目标编号设成 3，猫和碗的坐标先分别设成 1 和 2。
+
+```js
+const canvas = document.querySelector('#board');
+const ctx = canvas.getContext('2d');
+const status = document.querySelector('#status');
+const goal = 3;
+let player = 1;
+let bowl = 2;
+
+function draw() {
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = (i === 0 || i === 5) ? '#333' : '#eee';
+    ctx.fillRect(i * 48, 0, 47, 48);
+  }
+  ctx.fillStyle = '#545454';
+  ctx.beginPath();
+  ctx.arc(goal * 48 + 24, 24, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e79a25';
+  ctx.fillRect(bowl * 48 + 8, 8, 32, 32);
+  ctx.fillStyle = '#384cb0';
+  ctx.fillRect(player * 48 + 12, 12, 24, 24);
+  status.textContent = bowl === goal ? '碗在目标上' : '目标是空的';
+}
+
+draw();
+```
+
+再新建一个空的 `move.js`。双击打开 `push.html`，先确认橙色方块右边有一个深灰色圆点。这时按钮还没接到棋盘。
+
+## 第二步 · 接上推碗和撤销
+
+把下面内容放进 `move.js`。先算移动后的位置，两道墙都检查过以后才保存旧坐标、更新棋盘。
+
+```js
+const history = [];
+const isFloor = index => index > 0 && index < 5;
+
+function move(delta) {
+  const nextPlayer = player + delta;
+  if (!isFloor(nextPlayer)) return;
+
+  const nextBowl = nextPlayer === bowl ? bowl + delta : bowl;
+  if (!isFloor(nextBowl)) return;
+
+  history.push({ player, bowl });
+  player = nextPlayer;
+  bowl = nextBowl;
+  draw();
+}
+
+document.querySelector('#left').onclick = () => move(-1);
+document.querySelector('#right').onclick = () => move(1);
+document.querySelector('#undo').onclick = () => {
+  const previous = history.pop();
+  if (!previous) return;
+  player = previous.player;
+  bowl = previous.bowl;
+  draw();
+};
+```
+
+刷新页面，按下面顺序检查。
+
+| 操作 | 应该看到什么 |
+| --- | --- |
+| 向右一次 | 碗压在圆点上，状态为「碗在目标上」 |
+| 再向右一次 | 碗移开，圆点仍在原来的格子 |
+| 再向右一次 | 前面是墙，猫和碗都留在原地 |
+| 撤销一次 | 回到「碗在目标上」，撞墙没有占掉撤销记录 |
+
+如果移动后圆点找不回来，检查 `draw()` 是否每次都用固定的 `goal` 重画圆点。如果按钮一直不动，先核对两个脚本的文件名和顺序。小程序里的 Canvas、滑动和四关地图接在相同的状态上。
+
+## 从一排棋盘到 MEOW PUSH
+
 MEOW PUSH 的规则很简单。猫在棋盘里走，把饭碗推到鱼所在的格子，所有碗到位就通关。我想做的是一套从选关到通关都能玩的微信小程序，所以先把棋盘规则写成单独的逻辑，再让 Canvas 2D 负责画。后面的滑动、动画、撤销和记录，都围绕那份棋盘状态接上来。
 
 <div class="grid grid-cols-2 items-start gap-3">
@@ -21,7 +121,7 @@ MEOW PUSH 的规则很简单。猫在棋盘里走，把饭碗推到鱼所在的�
 <img src="/posts/2026-summer-mobile-development-experiment-4/images/level-3-play.png" width="280" alt="第 3 关游戏中">
 </div>
 
-## 碗走了，鱼凭什么还在
+### 碗走了，鱼凭什么还在
 
 地图一开始可以用二维数组描述墙和地板。容易犯的错是顺手再给鱼、空碗、满碗和猫各分一个数字。碗走到鱼的位置时，把那格写成「满碗」看起来没问题。但它接着被推走，光看这一格的当前状态，已经分不出底下原来有没有鱼。
 
@@ -33,7 +133,7 @@ MEOW PUSH 的规则很简单。猫在棋盘里走，把饭碗推到鱼所在的�
 
 把猫放上去时又遇到了素材的问题。原图里有白底、黑底和棋盘格，缩到格子尺寸以后，背景的边在浅色地板上仍然看得出来。最终运行时用裁小的透明 PNG，欢迎页单独用 `cat-home.png`。棋盘里的默认图、待机图和走路帧按状态切换，停了约 2.4 秒才开始交替画两张待机图。这些贴图复用同一个格子尺寸。
 
-## 一次滑动怎么变成可撤销的一步
+### 一次滑动怎么变成可撤销的一步
 
 正式游戏页只在 Canvas 区域接手势。我在按下时记起点，抬起时才算水平和垂直的位移。最大位移不足 28 px 就当普通触摸处理。斜着划时选位移更大的轴，再把方向交给同一个 `move()`。无论从哪一边划，碰撞判定都由 `tryMove()` 完成。
 
@@ -76,7 +176,7 @@ if (this.undoStack.length > MAX_UNDO_HISTORY) {
 <img src="/posts/2026-summer-mobile-development-experiment-4/images/level-clear.png" width="280" alt="关卡通关面板">
 </div>
 
-## 第四关为什么重新排过
+### 第四关为什么重新排过
 
 初版第四关虽然有三只碗，位置却太顺手，很快就能推完。数量不是我想要检验的东西，所以调整了后几关的初始坐标和内部墙体，再用 Node 沿上下左右搜索可达棋盘。最后按最少有效移动数看，四关分别是 8、9、11、20。这个结果能确认都可解、最短解变长。具体哪一关会卡住玩家，还得看试玩。
 
