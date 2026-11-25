@@ -3,24 +3,316 @@ title: "LLM-Eval-Lab 第二周：答对了，为什么还没通过？"
 pubDate: 2026-11-25
 slug: llm-eval-lab-week-2
 draft: false
-description: "一道 GSM8K 题的三份回答都算对了，旧规则却判错。顺着这个例子记下开发集评分和 Judge 校准。"
+description: "从一条数字回答开始，跟着做规则评分、pass@k、Judge 校准和同题模型比较。"
 tags: ["大模型评测", "Benchmark", "LLM-as-a-Judge"]
 categories: ["大模型评测"]
 series: "LLM-Eval-Lab"
 seriesOrder: 2
 ---
 
-`gsm8k-train-839` 的正确答案是 584。模型跑了三次，每次都算到了 584，旧评分器却把三次内容都判错了。原因在答案提取。模型写出了推导过程，里面有好几个数字，而旧规则只接受能从整段里提取出唯一数字的回答。
+第二周碰到一道怪题。`gsm8k-train-839` 的正确答案是 584，模型三次都算到了 584，旧评分器却三次都记成内容错误。
 
-我改了这一条规则。新版先找回答末尾有没有明确标出的最终答案，再判断数字对不对。内容通过数从 21/30 变成了 24/30，综合通过还是 21/30。题目要求只输出数字，这三条都有推导，所以格式那一项仍然过不了。重评时用的还是第一轮存下来的回答。[第一周的调用记录](/posts/llm-eval-lab/) · [数字评分源码](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/scripts/graderesult.py)
+打开回答就知道原因了。模型写了推导，旧程序在整段里找到好几个数字，没认出哪个才是最后的答案。改成优先提取明确标出的最终答案以后，GSM8K 开发子集的**内容通过数从 21/30 变成 24/30，综合通过数还是 21/30**。题目要求只输出数字，这三条都写了推导，格式仍然不合格。重评用的是原来存下来的回答。[第一周的调用记录](/posts/llm-eval-lab/) · [第二周评测报告](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md)
 
-## 这次跑了哪些题
+我在这里说的 **Benchmark（基准评测）**，是能拿来重复比较的一套题、判分规则和统计口径。下面先用六条自己写的回答跑通这条链路，再用仓库里真实保存的校准标签核对 Judge。练习用的是固定文本，下载代码后可以离线做完。
 
-题库有 80 条候选题。50 条是自建的技术支持、代码和专业知识题，另外 30 条从 GSM8K 抽取。GSM8K 原训练集的 10 条放到本项目的开发集，原测试集的 20 条放到本项目的测试集。目前合计是 30 条开发题、50 条测试题，题库里的审题状态仍标为待复核。[项目题库](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/data/questions.jsonl) · [GSM8K 官方仓库](https://github.com/openai/grade-school-math)
+## 先把练习跑起来
 
-开发集每题跑了三次，用的是 `deepseek-flash` 的 `c03d0ae2` 这轮记录。生成温度设为 0，关闭 thinking，输出上限 1024 token。42 条问答保留原评分，18 条代码回答交给单测，30 条数字回答用新版规则重评。那 18 条代码一共执行了 87 个单测，全都通过。
+1. 下载这个版本的代码并解压。进入解压后**能直接看到 `scripts` 和 `data`** 的目录。后面的命令都在这里运行。[下载项目 ZIP](https://github.com/IMaLLinn/LLM-Eval-Lab/archive/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00.zip)
+2. 在该目录打开终端。Windows 上可以在文件资源管理器的地址栏输入 `powershell` 再按回车。
+3. 输入 `python --version` 检查 Python。项目用的是 Python 3.12。若电脑上的命令叫 `python3` 或 `py -3.12`，后面每条命令都用它替换 `python`。还没安装的可以从官网下载安装。[Python 下载页](https://www.python.org/downloads/)
 
-| 类别 | 题数 | 内容通过 | 综合通过 | pass@1 | pass@3 | pass^3 |
+用编辑器打开 `data/questions.jsonl`，搜索 `gsm8k-train-839`。JSONL 可以当成一行一个 JSON 对象来看。对着这一行先找三处。
+
+| 字段 | 练习时看什么 |
+| --- | --- |
+| `id` | 题号。后面用它把同一道题的几次回答找回来。 |
+| `prompt` | 发给模型的题目。末尾要求只输出十进制数字。 |
+| `expected` | 用来核对内容的参考答案。这一题是 `584`。 |
+
+**Rubric** 是评分细则，规定什么算对。**Grader** 是执行评分的程序或模型。数字题可以提取数字再比数值。若约定先去掉无关空白，再逐字比较答案字符串，叫 **Exact Match（精确匹配）**。代码题可以给函数喂测试输入、核对输出，开放问答可以用模型按细则来判。程序能直接查的格式要求也可以单独留一项。[项目题库](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/data/questions.jsonl) · [评分代码](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/scripts/graderesult.py)
+
+## 第一步：把回答变成评分记录
+
+下面这三条都在回答同一道题，参考答案为 584。
+
+| 回答 | 内容通过 | 格式通过 | 综合通过 |
+| --- | --- | --- | --- |
+| `584` | 是 | 是 | 是 |
+| `583` | 否 | 是 | 否 |
+| 第一行是 `12 + 572 = 584`，第二行是 `Final answer: 584` | 是 | 否 | 否 |
+
+最后一列要求前两列同时通过。带推导的回答可以让内容通过，程序仍会按“只输出数字”这一要求判格式。把两种结果都存下来，以后遇到总分变化才查得出原因。
+
+在项目根目录新建 `week2_practice.py`。保存为 UTF-8 文本，文件名结尾是 `.py`。把下面整段复制进去。第一个练习题模拟“两次全过、一次只有内容过”，第二个模拟“三次都答错”。
+
+```python
+import json
+from pathlib import Path
+
+from scripts.graderesult import grade_numeric
+
+questions = {
+    "practice-a": (
+        "584",
+        ["584", "584", "12 + 572 = 584\nFinal answer: 584"],
+    ),
+    "practice-b": (
+        "7",
+        ["6", "8", "9"],
+    ),
+}
+
+with Path("week2_practice.jsonl").open("w", encoding="utf-8") as output:
+    for question_id, (expected, answers) in questions.items():
+        for trial, answer in enumerate(answers, start=1):
+            grading = grade_numeric(answer, expected)
+            record = {
+                "id": question_id,
+                "trial": trial,
+                "answer": answer,
+                "expected": expected,
+                "grading": grading,
+            }
+            output.write(json.dumps(record, ensure_ascii=False) + "\n")
+            print(
+                question_id, trial,
+                "content", grading["content_pass"],
+                "format", grading["format_pass"],
+                "combined", grading["pass"],
+            )
+```
+
+保存后在终端运行。
+
+```sh
+python week2_practice.py
+```
+
+屏幕上应该有六行。先看第三行，再看第四行。
+
+```text
+practice-a 3 content True format False combined False
+practice-b 1 content False format True combined False
+```
+
+这两行的综合成绩一样，遇到的问题却不一样。打开刚生成的 `week2_practice.jsonl`，那两个差异就在 `grading` 里面。`trial` 是同一题的第几次回答，这里从 1 开始。若终端报找不到 `week2_practice.py`，检查文件在哪一层。若报找不到 `scripts`，把练习文件放到和 `scripts` 同一层。
+
+## 第二步：从三次评分算出三个 pass 指标
+
+现在只看 `practice-a` 的**综合**结果，按试验顺序是“通过、通过、未通过”。先在纸上问三个问题。
+
+| 关心的问题 | 用哪个指标 |
+| --- | --- |
+| 如果每题只给一次尝试，能有多大机会过？ | `pass@1` |
+| 如果每题可以试 k 次，而且有办法认出正确候选，至少有一次过的机会多大？ | `pass@k` |
+| 如果同样的题会重复出现，连续 k 次都要过，机会多大？ | `pass^k` |
+
+第二行的条件很重要。代码生成可以用单元测试检查候选，所以多次生成里找到一个能通过的答案有意义。如果实际业务只展示第一份答案，就先看 `pass@1`。如果关心每次回答都可靠，就看 `pass^k`。HumanEval 和 τ-bench 分别用这些指标来回答不同的问题。[HumanEval 论文，第 2.1 节](https://arxiv.org/pdf/2107.03374) · [τ-bench 论文，第 3 节](https://arxiv.org/html/2406.12045#S3)
+
+### 为什么公式要数“组合”
+
+拿手头的一道题来说，`n` 是实际拿到有效判定的回答数，`c` 是其中通过的次数，`k` 是想考察的尝试次数。`practice-a` 的 `n = 3`、`c = 2`。公式里两个数上下排列、外面套圆括号且没有分数线，表示**组合数**。例如“3 选 2”问的是从三次试验中任选两次有几种选法。先选 1 再选 2，和先选 2 再选 1，算同一组。
+
+如果只选一次，分母是三种选法，分子是两种通过的选法，所以用 `c/n`。
+
+$$
+\text{pass@1} = \frac{c}{n}
+$$
+
+如果选两次，把试验编号写出来，只有下面三组。
+
+| 选哪两次 | 结果 | 至少一次过 | 两次都过 |
+| --- | --- | --- | --- |
+| 1 和 2 | 过、过 | 是 | 是 |
+| 1 和 3 | 过、未过 | 是 | 否 |
+| 2 和 3 | 过、未过 | 是 | 否 |
+
+推广到任意的 `k`，分母是从 `n` 次试验里选 `k` 次的组合数。要算**至少一次过**，省事的方法是先找它的反面：选的 `k` 次全是失败。失败一共有 `n − c` 次，所以全失败的选法就是从 `n − c` 次里选 `k` 次。用 1 减掉这部分，剩下的全都至少通过了一次。
+
+$$
+\text{pass@}k = 1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}
+$$
+
+要算**每次都过**，直接从 `c` 次成功里选 `k` 次，除以同一个分母。
+
+$$
+\text{pass}^{k} = \frac{\binom{c}{k}}{\binom{n}{k}}
+$$
+
+这里的 `k` 至少是 1，最多是 `n`。候选不够就没有选法。例如只有一次失败时，没法选出两次失败，“1 选 2”记成 0。上表的三个组合里，恰好有三个满足“至少一次过”，一个满足“两次都过”，所以 `pass@2 = 3/3 = 1`，`pass^2 = 1/3`。代 `k = 3` 时，只有“1、2、3”这一个组合，至少通过一次，所以 `pass@3 = 1`。它没能三次全过，`pass^3 = 0`。
+
+这些式子先按题算，再对入选的题等权平均。`n` 和 `k` 的区别是已经采到多少份回答，以及希望评价给几次尝试时的表现。用这些组合估计下一批尝试的成功概率时，原始试验应当在相同配置下独立生成。直接复制同一个回答三份，不能提供三次独立试验的信息。
+
+### 用项目里的脚本对答案
+
+在刚才的目录运行。
+
+```sh
+python scripts/analyze.py week2_practice.jsonl
+```
+
+预期输出如下。这个脚本实现了三次试验的固定口径，上面的 `k = 2` 算例可以用表格手算。
+
+```text
+题目总数： 2
+有效题目数： 2
+未纳入统计： 0
+pass@1: 33.33%
+pass@3: 50.00%
+pass^3: 0.00%
+```
+
+`practice-a` 的三个分数依次为 `2/3、1、0`，`practice-b` 是 `0、0、0`。把每列的两道题取平均就得到屏幕上的数。试着把 `practice-a` 第三条回答也改成 `"584"`，重新运行生成和汇总这两条命令。此时 `pass@1` 和 `pass^3` 都变成 50%，`pass@3` 保持 50%。回答已经至少过一次时，再多一次成功影响的是单次表现和重复可靠性。
+
+项目脚本只收试验编号正好是 1、2、3，且三次都拿到有效综合判定的题。缺一次、编号重复或存在空判定，都记入“未纳入统计”。模型生成了回答但未通过是 `False`，它仍然算一次有效判定。写报告时，要同时给出被排除的题数，以免只看成功得到评分的题。[三次试验汇总源码](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/scripts/analyze.py)
+
+## 第三步：检查 Judge 有没有替你判错
+
+上面的数字题能用规则自动核对。技术支持题里有一种情况不适合直接匹配整段文字。比如 `support-001` 问遇到 HTTP 429 怎么处理。说“等限流窗口结束再试”和说“等一段时间再重试”字面不同，可能都符合内容细则。可以把问题、参考答案、评分细则和待评回答交给另一个模型。这种评分方式叫 **LLM-as-a-Judge**。
+
+这道题还要求只输出一份 JSON，`cause` 和 `action` 两个键各出现一次，值都得是字符串。**内容归 Judge，格式归程序**。校准样本 `cal-013` 说对了限流和等待后重试，但 JSON 有重复键。人工按内容给 5 分，量表 Judge 给 4 分，理由里提到了这个重复键。格式规则已经判它不合格，量表又把同一个问题算进了内容分。
+
+### 先打开一条有分歧的记录
+
+用编辑器打开 `data/calibration.jsonl`，搜索 `cal-013`。在同一行里，`human_content_pass` 是 `true`，`judge_content_pass` 是 `false`。再找 `judge_reason`，它除了指出重复键，也认为等待后重试说得不够具体。这一行保存的是**二元判定**。上面的人工 5 分和 Judge 4 分来自另一轮量表实验，可以在报告里找到。[公开校准样本](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/data/calibration.jsonl) · [校准报告](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md)
+
+回终端运行报告命令。它读已有标签，既不需要模型调用，也不需要 API 密钥。
+
+```sh
+python scripts/calibrate.py report
+```
+
+你会看到 `TP: 15 FP: 0 FN: 1 TN: 14`。把它放成下面这个表比较好读。这里把人工判定当作参考，把“通过”当作正类。
+
+|  | Judge 通过 | Judge 未通过 |
+| --- | ---: | ---: |
+| 人工通过 | 15（TP，两边都说过） | 1（FN，Judge 漏判） |
+| 人工未通过 | 0（FP，Judge 错放行） | 14（TN，两边都说没过） |
+
+这就是**混淆矩阵**。看对角线能算一致率，看另外两格可以区分错放行和漏判。这里只纳入两边都有有效二元标签的 30 条。独立的格式规则在这批样本上与人工一致 30/30。
+
+### 为什么 29/30 之外还报 Kappa
+
+用 `pₒ` 记观察到的一致率，它就是对角线之和除以总数，所以 `pₒ = (15 + 14)/30 = 29/30`。分歧率是剩下的 `1/30`。
+
+只看一致率会有个问题。设想 100 条里本来就有 95 条通过，Judge 每条都说通过，也能拿到 95% 一致率，可它一条失败也找不出来。Cohen’s Kappa 先根据双方各自给“通过”和“未通过”的比例，算出仅按这些比例各自独立标签时的预期一致率，用 `pₑ` 表示。
+
+用上表在纸上算一遍。
+
+1. 人工判通过 `16/30`，Judge 判通过 `15/30`。按各自比例独立给标签，碰巧都判通过的概率是这两个比例相乘。
+2. 人工判未通过 `14/30`，Judge 判未通过也是 `15/30`。把这两个比例相乘，得到碰巧都判未通过的概率。
+3. 相加得到 `pₑ = 0.5`。实际一致率比它高出 `pₒ − pₑ`。这个超出的部分最多只能到 `1 − pₑ`，所以拿前者除以后者。
+
+$$
+\kappa = \frac{p_o - p_e}{1 - p_e}
+$$
+
+`κ` 是 Kappa 的符号。代入 `(29/30 − 0.5)/(1 − 0.5)`，算出来约 `0.9333`，与脚本一致。`κ = 1` 表示完全一致，`κ = 0` 表示只达到这个机会基准，负数则低于这个基准。如果 `pₑ = 1`，分母为 0，无法用这个公式给分。在前面“全部判通过”的例子里，`pₒ` 和 `pₑ` 都是 0.95，因此 Kappa 是 0。[Cohen’s Kappa 定义](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.cohen_kappa_score.html)
+
+### 改成 1–5 分以后，为什么又看 Spearman
+
+Kappa 在上面用来比较“通过 / 未通过”。1–5 分还可以问另一个问题：**人工觉得更好的回答，Judge 大体上是不是也排得更高？** 这就用 Spearman 秩相关。它先把两列原始分数各自变成名次，再比较名次。
+
+下面四条是用来手算的例子。按低分到高分排，最低是第 1 名。人工给 B、C 都打了 3 分，它们占第 2 和第 3 名，两个都记成平均名次 `2.5`。
+
+| 回答 | 人工分 | Judge 分 | 人工名次 | Judge 名次 |
+| --- | ---: | ---: | ---: | ---: |
+| A | 1 | 2 | 1 | 1 |
+| B | 3 | 4 | 2.5 | 3 |
+| C | 3 | 3 | 2.5 | 2 |
+| D | 5 | 5 | 4 | 4 |
+
+用 `Rᵢ` 和 `Sᵢ` 表示同一条回答 `i` 在人工列和 Judge 列的名次，`R̄` 和 `S̄` 是两列各自的平均名次。`N` 是有成对分数的回答数，这里是 4。`Σ` 的意思是对从第 1 条到第 `N` 条逐条相加。`ρₛ` 就是下面算出的 Spearman 系数。
+
+$$
+\rho_s=\frac{\sum_{i=1}^{N}(R_i-\bar R)(S_i-\bar S)}{\sqrt{\sum_{i=1}^{N}(R_i-\bar R)^2}\,\sqrt{\sum_{i=1}^{N}(S_i-\bar S)^2}}
+$$
+
+看一看分子怎么来的。两列平均名次都是 2.5。A 在两列都比平均低 1.5，把两边的差相乘得 2.25。D 在两列都比平均高 1.5，再贡献 2.25。B、C 的人工名次等于平均值，贡献都是 0。分子因此是 4.5。分母用两列偏差的平方和来缩放，对应表里算出 `√4.5 × √5`，结果约 `0.9487`。也可以拿 Python 标准库对两列名次直接算。
+
+```sh
+python -c "from statistics import correlation; print(round(correlation([1, 2.5, 2.5, 4], [1, 3, 2, 4]), 4))"
+```
+
+输出应为 `0.9487`。两列排名完全一致时，Spearman 是 1，就算 Judge 把每个原始分数都抬高一分，排序也可能完全一致。任意一列所有名次都相同，分母就是 0，相关算不出来。
+
+真实量表实验有 30 对有效分数，23 条同分，Spearman 是 0.9441。一起报告这两个数，读者才能知道排序接近到什么程度，以及原始分数到底有多少条相等。校准样本包含 14 条模型回答、16 条构造样例。Judge 的温度设为 0，关闭 thinking，输出上限 256 token。两条量表请求因 SSL 连接中断而补跑。[SciPy 对 Spearman 秩相关的说明](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html) · [真实量表结果](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md)
+
+### 顺手检查 Judge 偏爱什么
+
+- **位置偏置。** 同一对答案试一次 A/B、一次 B/A，再看它选的是否还是原来那份文字。如果第一次选第一位，交换后仍选第一位，那就换了答案。项目用了 6 对，两轮次序都有判定，0 对发生翻判。
+- **长度偏置。** 保留回答的事实内容，把同一份文字重复三遍再判。项目的 6 条里有 1 条涨 1 分，另 5 条分数不变。这只检查了重复文本。要评估一般的长度偏置，还得比较内容质量相近的长短答案。
+- **自我偏好。** 比较裁判给同家族和其他家族答案的判定，并用人工复核控制质量差异。本轮 Judge 请求的是 `deepseek-v4-pro`，开发集被测模型是 `deepseek-flash`。跨家族对照还没做。[校准与偏置实验](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md) · [位置、长度和自我偏好的研究](https://arxiv.org/abs/2306.05685)
+
+## 第四步：一个通过率有多稳，两个分数又该怎么比
+
+到这里已经有三种数。一个是模型回答的通过率，一个是人工和 Judge 的一致率，还有一个是两列量表的秩相关。**先看手上的数据是什么样的，再选计算办法**。Wilson 区间用于单个二元比例，McNemar 用在两个模型做了同一批题的配对二元结果上。
+
+### Wilson 区间：一个 80% 有多大不确定性
+
+设想两次评测都报 80%。一次是 20 道题过了 16 道，另一次是 200 道过了 160 道。仅看 80% 无法区分这两次提供的证据。置信区间会把样本量考虑进去。Wilson 区间从候选的真实通过率出发，看它和观测比例差了多少个标准误差，把仍与观测相容的候选值保留下来。这个做法给出的区间端点会留在 0 到 1 之间，小样本或比例靠近边界时也能用。[NIST 的 Wilson 区间说明](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)
+
+用 `N` 表示独立的二元观测数，`s` 表示其中成功数。`p̂` 读作“p 帽子”，是观测比例 `s/N`。`z` 是标准正态分布的临界值，双侧 95% 用约 `1.96`。计算时可以分成三行。`D` 是两部分共用的分母，`C` 是区间中心，`H` 是区间半宽。
+
+$$
+D=1+\frac{z^2}{N},\qquad C=\frac{\hat p+\frac{z^2}{2N}}{D}
+$$
+
+$$
+H=\frac{z}{D}\sqrt{\frac{\hat p(1-\hat p)}{N}+\frac{z^2}{4N^2}}
+$$
+
+$$
+[\text{lower},\text{upper}]=[C-H,\ C+H]
+$$
+
+拿 16/20 代入，`N = 20`，`s = 16`，`p̂ = 0.8`。先算得 `D ≈ 1.1921`，再算 `C ≈ 0.7517`、`H ≈ 0.1677`。中心减半宽是下限，加半宽是上限，约 `[58.4%, 91.9%]`。用仓库的函数验一下。函数的第一个参数是成功数，第二个是观测数，返回的两个数是比例。`.1%` 会把比例显示成保留一位小数的百分数。
+
+```sh
+python -c "from scripts.calibrate import wilson; lo, hi = wilson(16, 20); print(f'{lo:.1%} to {hi:.1%}')"
+```
+
+把命令里的 `16, 20` 改成 `160, 200`，点估计还是 80%，但区间会缩到约 `73.9%–85.0%`。95% 的意思是，在能反复用同样方式独立抽样的前提下，这种方法长期算出来的区间约有 95% 会覆盖真实比例。
+
+同一题的三条回答可能相关。要给单次通过率用这个区间，可以在评测前固定每题取一次试验，让一道题只贡献一个二元结果。别直接把开发集的 90 条回答当成 90 道独立的题。项目报告脚本也为校准样本的一致率 29/30 打印了 `[83.33%, 99.41%]`，这只是在独立假设下描述手上的这批样本。[Wilson 计算源码](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/scripts/calibrate.py)
+
+### McNemar 检验：两个模型谁多赢了同一道题
+
+想比较 A 和 B 时，让两个模型在相同条件下做同一套题，每道题按预先定好的口径，为每个模型留下一个“过”或“未过”。只有这样才能把第 1 题的 A 和第 1 题的 B 配成一对。下面是**假设**的 20 道题。
+
+|  | B 通过 | B 未通过 |
+| --- | ---: | ---: |
+| A 通过 | 6 | 8（只有 A 通过） |
+| A 未通过 | 2（只有 B 通过） | 4 |
+
+A 过了 14 道，B 过了 8 道。看这两个总数，还不够看出差距来自哪几道题。两边同过或者同不过时，这道题没有给任何一边增加优势，所以 McNemar 只看两个不一致的格子。
+
+- `b` 是 A 过、B 未过的题数，这里是 8。
+- `c` 是 B 过、A 未过的题数，这里是 2。
+- `m = b + c` 是发生分歧的题数，这里是 10。
+- `X` 是假定两边没有系统优势时，这 `m` 道分歧题里“只有 A 通过”的数量。零假设下，每道分歧题由 A 或 B 单独通过的机会各为一半，独立配对下 `X` 服从二项分布。式子里的 `∼` 就读作“服从”。
+- `min(b,c)` 是两个分歧格中较小的数。`Pr` 表示概率。双侧 `p` 值把偏向 A、偏向 B 这两种同样极端的结果都算进去。
+
+$$
+X\sim\operatorname{Binomial}(m,0.5),\qquad p=\min\bigl(1,\ 2\Pr[X\le\min(b,c)]\bigr)
+$$
+
+用抛 10 次公平硬币来想这个例子。假定没有优势，只有 A 通过的题数就像正面次数。观测是 8 对 2，和 2 对 8 一样偏。正面出现 0、1、2 次的选法分别有 1、10、45 种，共 56 种。10 次共有 1024 种等可能的结果。把 `56/1024` 乘 2 就是双侧 `p = 0.109375`。式子外层和 1 取较小值，是为了保证双侧概率不超过 1。
+
+```sh
+python -c "from math import comb; tail = sum(comb(10, i) for i in range(3)) / 2**10; print(min(1, 2 * tail))"
+```
+
+输出 `0.109375`。若事先选的显著性水平是 0.05，这批题的差异证据还不够。报告仍应给出 A、B 的通过率、分差和这两个分歧计数。这里的 `p` 值用于这个假设例子。项目本周只报告了一个模型在开发集上的结果。[statsmodels 的精确 McNemar 检验](https://www.statsmodels.org/stable/generated/statsmodels.stats.contingency_tables.mcnemar.html)
+
+## 回到这周的真实结果
+
+题库里有 80 条候选题，包含 50 条自建题和 30 条 GSM8K。项目把 GSM8K 原训练集中的 10 条放进开发集，原测试集中的 20 条放进项目测试集。加上自建题后，项目的开发集有 30 条，测试集有 50 条，题库仍标记为待人工审题。开发集用来改提示词和评分器，固定它们以后再用测试集比较模型。公开题也可能在模型训练时已经出现过，所以换成 GSM8K 子集并不能消除数据污染的风险。[项目题库](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/data/questions.jsonl) · [GSM8K 官方仓库](https://github.com/openai/grade-school-math)
+
+真实开发集用 `deepseek-flash` 的 `c03d0ae2` 这轮记录。温度为 0，关闭 thinking，输出上限 1024 token。每题三次。42 条问答保留原评分，18 条代码回答总共执行 87 个单测，全部通过，另外 30 条数字回答用新版规则重评。
+
+| 类别 | 题数 | 内容通过／回答数 | 综合通过／回答数 | pass@1 | pass@3 | pass^3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 技术支持 | 10 | 30/30 | 30/30 | 100% | 100% | 100% |
 | 代码 | 6 | 18/18 | 18/18 | 100% | 100% | 100% |
@@ -28,90 +320,6 @@ seriesOrder: 2
 | GSM8K 子集 | 10 | 24/30 | 21/30 | 70% | 70% | 70% |
 | 合计 | 30 | 84/90 | 81/90 | 90% | 90% | 90% |
 
-综合通过要求内容和格式都过。这次有 27 题三次全过，3 题三次全没过，所以表里最后三列碰巧相同。汇总脚本只统计正好有三次且三次都有判定的题。30 道开发题这次都进了分母。[开发集报告](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md) · [汇总脚本](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/scripts/analyze.py)
+表里三个 90% 的分母含义可以用第二步的方法核对。`pass@1` 是 `81/90`。27 道题三次全过，所以“至少一次过”的是 27 道，“三次全过”的也是 27 道，另外 3 道三次都没过。后二者分别是 `27/30`。30 道开发题都有三次有效判定。公开报告保存了这轮的分项数据，逐条运行文件留在本地。[真实开发集报告](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md)
 
-## Judge 也有一次把内容和格式混着判了
-
-技术支持里有道 HTTP 429 题。回答要解释限流，再给出合理的重试办法，最后还得用带 `cause` 和 `action` 两个字符串字段的 JSON 交卷。JSON 能不能解析、键有没有重复，程序自己就能查。回答有没有说清楚为什么限流、该怎么重试，才交给 Judge 按评分细则判。
-
-校准样本 `cal-013` 写清楚了限流和等待后重试，但 JSON 里有重复键。人工给内容 5 分，Judge 给了 4 分，理由提到了这个重复键。格式规则已经把它判为未通过，这里又扣了一遍内容分。
-
-这次校准用了 30 条回答。14 条来自模型，16 条是构造样例。Judge 请求的是 `deepseek-v4-pro`，服务端精确版本未知。温度设为 0，关闭 thinking，输出上限 256 token。二元内容判定和人工一致 29/30，格式规则和人工一致 30/30。
-
-|  | Judge 判通过 | Judge 判未通过 |
-| --- | ---: | ---: |
-| 人工判通过 | 15 | 1 |
-| 人工判未通过 | 0 | 14 |
-
-量表实验最后拿到 30 对有效分数，其中两条因 SSL 连接中断补跑。人工和 Judge 有 23 条同分，Spearman 秩相关是 0.9441。我也看了换位和重复文本会不会改判。6 对答案换位后都没有翻判。把回答重复三遍，6 条里有 1 条涨了 1 分。样本很少，记录只到这一步。Judge 和被测模型同为 DeepSeek，跨家族对照还没做。[校准记录](https://github.com/IMaLLinn/LLM-Eval-Lab/blob/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00/CALIBRATION.md) · [Judge 偏置的原论文](https://arxiv.org/abs/2306.05685)
-
-## 把容易记混的公式写下来
-
-**pass@1、pass@k、pass^k。** 一道题做了 n 次，有 c 次通过。从 n 次里不放回地选 k 次，分母就是全部组合数。选一次看通过率，选 k 次至少过一次就扣掉全失败的组合，要求 k 次全过就只数全通过的组合。k 要在 1 到 n 之间，候选数不足 k 的组合数记为 0。
-
-$$
-\text{pass@1} = \frac{c}{n}
-$$
-
-$$
-\text{pass@}k = 1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}
-$$
-
-$$
-\text{pass}^{k} = \frac{\binom{c}{k}}{\binom{n}{k}}
-$$
-
-拿「过、过、没过」算一次。单次通过率是 2/3。抽两次共有三种选法，每种都有一次通过，所以 `pass@2` 是 1。只有一种选法两次都过，所以 `pass^2` 是 1/3。整套题先按题算，再对各题取平均。[HumanEval 论文，第 2.1 节](https://arxiv.org/pdf/2107.03374) · [τ-bench 论文，第 3 节](https://arxiv.org/html/2406.12045#S3)
-
-**Wilson 95% 置信区间。** 给单个二元通过率报区间时用。N 个独立观测里有 s 个通过，观测通过率 p̂ = s/N，95% 取 z = 1.96。减号算下限，加号算上限。
-
-$$
-\frac{\hat p + \frac{z^2}{2N} \pm z\sqrt{\frac{\hat p(1-\hat p)}{N} + \frac{z^2}{4N^2}}}{1 + \frac{z^2}{N}}
-$$
-
-比如 20 道独立题通过 16 道，点估计 80%，区间约为 58.4%–91.9%。同一道题的三次回答可能相关，要给单次通过率算这个区间，可以事先约定每题只取一次试验。本轮校准脚本也给了 29/30 一致率的 Wilson 区间 83.33%–99.41%，是在假定独立时对这批样本的描述。[NIST · 比例的置信区间](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)
-
-**McNemar 检验。** 下次用同一批题比两个模型时，用这个检验看配对的成败。每题先按同一口径得到 A、B 各一个二元结果。b 是只有 A 通过的题数，c 是只有 B 通过的题数。两种分歧方向等可能时，分歧题里只有 A 通过的数量 X 服从参数为 b + c 和 0.5 的二项分布。
-
-$$
-p = \min\left(1,\,2\Pr[X \le \min(b,c)]\right)
-$$
-
-用假设数据算，b = 8、c = 2 时，双侧 p 值约为 0.109。按 0.05 的显著性水平，证据还不够。本轮开发集结果只来自一个模型。[statsmodels · McNemar 检验](https://www.statsmodels.org/stable/generated/statsmodels.stats.contingency_tables.mcnemar.html)
-
-**Cohen’s Kappa。** 回看上面的混淆矩阵。对角线相加再除以 30 得到原始一致率 29/30，剩下的 1/30 是分歧率。人工判了 16 条通过，Judge 判了 15 条。按两边各自的类别比例估计偶然一致率 pₑ，得到 (16/30 × 15/30) + (14/30 × 15/30) = 0.5。
-
-$$
-\kappa = \frac{p_o - p_e}{1 - p_e} = \frac{29/30 - 0.5}{1 - 0.5} \approx 0.9333
-$$
-
-**Spearman 秩相关。** 量表分数先分别排名，并列分取平均名次，再算两列名次的 Pearson 相关。Judge 每条都打高一分时，名次照样可能完全相同。所以报告里还记了多少条真正同分。[scikit-learn · Cohen’s Kappa](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.cohen_kappa_score.html) · [SciPy · Spearman 相关](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html)
-
-$$
-\rho_s = \operatorname{Corr}_{\mathrm{Pearson}}\bigl(\operatorname{rank}(x),\operatorname{rank}(y)\bigr)
-$$
-
-## 不用调模型，自己验一遍
-
-下载文末链接的项目快照，解压后进含有 `scripts/` 和 `data/` 的目录。用 Python 3.12 跑下面两行。第一行直接读已有校准标签，一致率应该是 96.67%，Kappa 是 0.9333。第二行是两个简短的练习答案，前一条全过，后一条只过内容。
-
-```powershell
-python scripts/calibrate.py report
-python -c "from scripts.graderesult import grade_numeric; print(grade_numeric('584', '584')); print(grade_numeric('12 + 572 = 584\nFinal answer: 584', '584'))"
-```
-
-公开仓库里有题库、校准标签、脚本和报告。这轮逐条运行结果保存在本地。[本周项目快照](https://github.com/IMaLLinn/LLM-Eval-Lab/tree/e57158c1c78ec7dee6af8fcedfe38a1394ab5c00)
-
-## 后面复查时用的几个词
-
-| 术语 | 对应的东西 |
-| --- | --- |
-| Benchmark、参考解（Reference Answer） | 固定一批任务和判分方法。参考解用来核对关键事实或预期结果。 |
-| Rubric、Grader | 前者写清楚什么算答对，后者实际做判定。题目细则是 v0.1，数字评分器可以单独升到 v0.3。 |
-| 规则评分、Exact Match、单元测试 | 用规则核对格式或答案。Exact Match 直接比较规范化后的字符串，代码题则用输入和预期输出来测。 |
-| LLM-as-a-Judge、Judge Prompt | 前者是裁判模型，后者约定它看哪些信息、怎么判和输出什么。 |
-| Dev / Test Split、数据泄漏 | 在开发集改评分逻辑，固定后再用测试集。反复拿测试题调规则，测试结果就会越来越贴合那批题。 |
-| 人工复核、校准、混淆矩阵 | 人先按同一份细则给分，再用交叉计数找到错判，逐条回看原因。 |
-| Bad Case、错误归因 | 从题面和数据、Prompt、Rubric、模型回答四处找原因。评分器提取错和 Judge 输入加工丢信息也分别记。 |
-
-下次整理测试集，先核对题能不能完成、等价解能不能过、初始状态对不对，再查样本泄漏和评分捷径。到了多轮或 RAG，还得保留角色、轮次、工具结果或检索原文，方便回看 Judge 当时看到了什么。开发集这轮的 90% 先留在开发记录里。
+重跑时，题库版本、生成配置、Rubric 版本和评分器版本都要留下来。像 584 这次，变的是数字评分器，题目和回答都没换。遇到别的错例，可以沿着题面和参考答案、提示词、Rubric、模型回答去查。评分代码取错值和传给 Judge 的上下文丢失也要单独记，因为需要改的地方不同。下一轮做独立测试前，先审题和固定评分口径。这一周的结果可以帮我找到评分器的问题，还不足以拿来做模型选型。
