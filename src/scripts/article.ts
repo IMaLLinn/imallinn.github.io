@@ -1,3 +1,5 @@
+import 'giscus';
+
 let pageListeners: AbortController | undefined;
 
 document.addEventListener('astro:before-swap', () => pageListeners?.abort());
@@ -8,6 +10,19 @@ document.addEventListener('astro:page-load', () => {
   if (!body) return;
   pageListeners = new AbortController();
   const { signal } = pageListeners;
+
+  const commentsTemplate = document.querySelector<HTMLTemplateElement>('template[data-comments]');
+  const comments = commentsTemplate?.content.firstElementChild;
+  if (commentsTemplate && comments) {
+    const root = document.documentElement;
+    const syncTheme = () => comments.setAttribute('theme', root.classList.contains('dark') ? 'dark' : 'light');
+    syncTheme();
+    // Giscus reads the current URL when mounted. Astro updates it after swapping the page.
+    commentsTemplate.replaceWith(comments);
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+  }
 
   for (const block of body.querySelectorAll<HTMLPreElement>('pre')) {
     const code = block.querySelector('code');

@@ -61,6 +61,23 @@ const series = post?.data.series
             {newer && <a class="surface" href={postHref(newer)}><small>上一篇</small><span>{titleOf(newer)}</span></a>}
             {older && <a class="surface" href={postHref(older)}><small>下一篇</small><span>{titleOf(older)}</span></a>}
           </nav>
+          {post.data.comment !== false && (
+            <section class="article-comments" aria-labelledby="article-comments-heading">
+              <h2 id="article-comments-heading">评论</h2>
+              <template data-comments>
+                <giscus-widget
+                  repo="IMaLLinn/imallinn.github.io"
+                  repoid="R_kgDOP3KcCw"
+                  category="Announcements"
+                  categoryid="DIC_kwDOP3KcC84CzBYm"
+                  mapping="pathname"
+                  inputposition="top"
+                  lang="zh-CN"
+                  loading="lazy"
+                ></giscus-widget>
+              </template>
+            </section>
+          )}
         </div>
         {headings.length > 0 && (
           <aside class="toc">
